@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍄 皮克敏蘑菇討伐鬧鐘 (終極桌機通知版)</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ED1C24">
+    <style>
+        :root {
+            --pikmin-green: #8DC63F;
+            --pikmin-blue: #00AEEF;
+            --pikmin-red: #ED1C24;
+            --pikmin-yellow: #FFF200;
+            --bg-color: #F7F9F4;
+            --card-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .layout-wrapper { display: flex; flex-direction: row; gap: 20px; width: 100%; max-width: 900px; justify-content: center; align-items: flex-start; }
+        .log-panel { background-color: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); width: 100%; max-width: 320px; border-top: 8px solid var(--pikmin-yellow); height: calc(100vh - 80px); position: sticky; top: 20px; display: flex; flex-direction: column; }
+        .container { background-color: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border-top: 8px solid var(--pikmin-red); }
+
+        @media (max-width: 768px) {
+            .layout-wrapper { flex-direction: column; align-items: center; }
+            .log-panel { order: 2; height: 400px; position: static; max-width: 400px; }
+            .container { order: 1; }
+        }
+
+        h1, h2 { text-align: center; color: var(--pikmin-green); margin-top: 0; margin-bottom: 20px; }
+        .log-panel h2 { font-size: 20px; color: #f5b041; border-bottom: 2px solid #EEE; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"], input[type="time"], input[type="number"] { width: 100%; padding: 10px; border: 2px solid #E0E0E0; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.3s; }
+        input[type="text"]:focus, input[type="time"]:focus, input[type="number"]:focus { border-color: var(--pikmin-blue); outline: none; }
+
+        .quick-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tag-btn { background-color: #f0f9ff; color: var(--pikmin-blue); border: 1px solid #bae6fd; padding: 6px 12px; border-radius: 15px; font-size: 13px; cursor: pointer; width: auto; margin-top: 0; font-weight: normal; transition: 0.2s; }
+        .tag-btn:hover { background-color: var(--pikmin-blue); color: white; }
+
+        .mode-tabs { display: flex; margin-bottom: 15px; background: #eee; border-radius: 8px; padding: 4px; }
+        .mode-tabs label { flex: 1; text-align: center; margin: 0; padding: 8px 0; cursor: pointer; border-radius: 6px; font-size: 14px; transition: 0.3s; color: #666; }
+        .mode-tabs input[type="radio"] { display: none; }
+        .mode-tabs input[type="radio"]:checked + span { background: white; color: var(--pikmin-blue); box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: block; border-radius: 6px; font-weight: bold; }
+        .countdown-group { display: flex; gap: 10px; }
+        .countdown-group input { text-align: center; }
+        .input-section { display: none; }
+        .input-section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        button { width: 100%; padding: 12px; background-color: var(--pikmin-green); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 5px; }
+        button:hover { background-color: #7BB035; }
+        button:active { transform: scale(0.98); }
+        .test-btn { background-color: #f0f0f0; color: #555; font-size: 14px; padding: 8px; margin-top: 10px; border: 1px solid #ccc; }
+        .test-btn:hover { background-color: #e0e0e0; }
+
+        /* 通知權限按鈕特別樣式 */
+        .notify-btn { background-color: var(--pikmin-blue); margin-bottom: 15px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .notify-btn.granted { background-color: #ccc; cursor: not-allowed; }
+
+        .alarm-list { margin-top: 30px; }
+        .alarm-list h2 { font-size: 18px; margin-bottom: 15px; color: var(--pikmin-green); }
+        .alarm-item { background-color: #FDFDFD; border: 1px solid #EEE; border-left: 5px solid var(--pikmin-blue); padding: 10px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        .alarm-item.delayed { border-left-color: var(--pikmin-yellow); }
+        .alarm-item.ding1 { border-left-color: #f5b041; background-color: #fdfaf4; }
+        .alarm-item.ding2 { border-left-color: #e67e22; background-color: #fdf5f0; }
+        .alarm-info strong { display: block; font-size: 16px; margin-bottom: 3px; }
+        .delete-btn { background-color: #FF5252; color: white; padding: 5px 10px; border-radius: 4px; width: auto; margin-top: 0; font-size: 12px; }
+
+        #logContainer { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; }
+        .log-item { font-size: 13px; padding: 8px; border-radius: 6px; background: #f9f9f9; border-left: 4px solid #ccc; line-height: 1.4; }
+        .log-time { color: #888; font-size: 11px; display: block; margin-bottom: 2px; }
+        .log-create { border-left-color: var(--pikmin-blue); background: #f0f9ff; }
+        .log-trigger { border-left-color: var(--pikmin-red); background: #fff0f0; }
+        .log-ding { border-left-color: #e67e22; background: #fdf5f0; }
+        .log-delete { border-left-color: #999; background: #f5f5f5; color: #666; }
+        .log-clear-btn { background-color: #eee; color: #555; padding: 6px; font-size: 12px; margin-top: 10px; border: none;}
+
+        #customModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 300px; border-top: 8px solid var(--pikmin-red); animation: popIn 0.3s ease-out; }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-content h3 { margin-top: 0; color: #333; }
+        .modal-content p { font-size: 16px; color: #555; line-height: 1.5; margin-bottom: 20px;}
+        .close-modal-btn { background-color: var(--pikmin-blue); width: auto; padding: 10px 20px; font-size: 16px; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #aaa; }
+    </style>
+</head>
+<body>
+
+    <div class="layout-wrapper">
+        <div class="log-panel">
+            <h2>📜 操作紀錄</h2>
+            <div id="logContainer">
+                <div class="log-item" style="text-align:center; color:#999; border:none; background:none;">系統啟動，等待操作...</div>
+            </div>
+            <button class="log-clear-btn" onclick="clearLogs()">🗑️ 清空紀錄</button>
+        </div>
+
+        <div class="container">
+            <h1>🍄 蘑菇討伐鬧鐘</h1>
+
+            <button id="notifyBtn" class="notify-btn" onclick="requestNotificationPermission()">
+                🔔 點我開啟「Windows 桌面通知」
+            </button>
+            
+            <div class="form-group">
+                <label for="location">📍 蘑菇地點：</label>
+                <input type="text" id="location" placeholder="例如：公園入口" required>
+                <div class="quick-tags" id="quickTagsContainer"></div>
+            </div>
+            
+            <div class="mode-tabs">
+                <label><input type="radio" name="inputMode" value="exact" checked onchange="toggleInputMode()"><span>🕒 指定時間</span></label>
+                <label><input type="radio" name="inputMode" value="remain" onchange="toggleInputMode()"><span>⏳ 剩餘時間</span></label>
+            </div>
+
+            <div id="mode-exact" class="input-section active">
+                <div class="form-group">
+                    <label>⏱️ 預計摧毀時間：</label>
+                    <input type="time" id="destroyTime">
+                </div>
+            </div>
+
+            <div id="mode-remain" class="input-section">
+                <div class="form-group">
+                    <label>倒數多久摧毀 (小時/分/秒)：</label>
+                    <div class="countdown-group">
+                        <input type="number" id="remainH" placeholder="時" min="0" max="99">
+                        <input type="number" id="remainM" placeholder="分" min="0" max="59">
+                        <input type="number" id="remainS" placeholder="秒" min="0" max="59">
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="addAlarms()">🚀 設定鬧鐘</button>
+            <button class="test-btn" onclick="testVoiceAndNotification()">🔊 測試語音、音效與桌面通知</button>
+
+            <div class="alarm-list">
+                <h2>⏳ 等待中的提醒</h2>
+                <div id="alarmsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="customModal">
+        <div class="modal-content">
+            <h3>⏰ 蘑菇提醒</h3>
+            <p id="modalMessage">訊息內容</p>
+            <button class="close-modal-btn" onclick="closeModal()">我知道了</button>
+        </div>
+    </div>
+
+    <script>
+        let activeAlarms = [];
+        let audioCtx = null;
+        const quickLocations = ["南天宮", "孔子廟", "和服小白", "菱形噴水池", "美術海", "酸菜白肉鍋"];
+
+        // 檢查並更新通知按鈕狀態
+        function checkNotificationStatus() {
+            const btn = document.getElementById('notifyBtn');
+            if (!("Notification" in window)) {
+                btn.innerText = "❌ 此瀏覽器不支援桌面通知";
+                btn.classList.add("granted");
+                btn.disabled = true;
+            } else if (Notification.permission === "granted") {
+                btn.innerText = "✅ 桌面通知已啟用";
+                btn.classList.add("granted");
+                btn.disabled = true;
+            }
+        }
+
+        // 要求桌面通知權限
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("抱歉，您的瀏覽器不支援桌面通知功能。");
+                return;
+            }
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    addLog("✅ 成功啟用 Windows 桌面通知權限", "create");
+                    checkNotificationStatus();
+                    // 發送一個測試的桌面通知
+                    new Notification("🍄 蘑菇鬧鐘", { body: "桌面通知功能已成功啟用！" });
+                } else {
+                    addLog("❌ 桌面通知權限被拒絕", "delete");
+                }
+            });
+        }
+
+        // 觸發桌面通知的函數
+        function sendDesktopNotification(title, message) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, {
+                    body: message,
+                    icon: "icon.png" // 如果你有 PWA 圖示，它會顯示在通知卡片上
+                });
+            }
+        }
+
+        function initQuickTags() {
+            const container = document.getElementById('quickTagsContainer');
+            quickLocations.forEach(loc => {
+                const btn = document.createElement('button');
+                btn.type = 'button'; btn.className = 'tag-btn'; btn.innerText = loc;
+                btn.onclick = () => document.getElementById('location').value = loc;
+                container.appendChild(btn);
+            });
+        }
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq, startTimeOffset, duration) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTimeOffset);
+            gain.gain.setValueAtTime(1, audioCtx.currentTime + startTimeOffset);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTimeOffset + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + startTimeOffset);
+            osc.stop(audioCtx.currentTime + startTimeOffset + duration);
+        }
+
+        function playSingleDing() { initAudio(); playTone(880, 0, 0.5); }
+        function playTripleDing() {
+            initAudio();
+            playTone(1046.5, 0, 0.15); playTone(1046.5, 0.2, 0.15); playTone(1046.5, 0.4, 0.15);
+        }
+
+        function addLog(message, type) {
+            const container = document.getElementById('logContainer');
+            if (container.children.length > 0 && container.children[0].innerText.includes('系統啟動')) container.innerHTML = '';
+            const timeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const logItem = document.createElement('div');
+            logItem.className = `log-item log-${type}`;
+            logItem.innerHTML = `<span class="log-time">${timeStr}</span> ${message}`;
+            container.prepend(logItem);
+        }
+
+        function clearLogs() { document.getElementById('logContainer').innerHTML = '<div class="log-item" style="text-align:center; color:#999; border:none; background:none;">紀錄已清空</div>'; }
+
+        function toggleInputMode() {
+            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+            document.getElementById('mode-exact').classList.remove('active');
+            document.getElementById('mode-remain').classList.remove('active');
+            document.getElementById(`mode-${mode}`).classList.add('active');
+        }
+
+        function testVoiceAndNotification() {
+            initAudio();
+            playAlertSound("測試成功！");
+            sendDesktopNotification("🍄 測試通知", "這是一則來自蘑菇鬧鐘的桌面通知測試！");
+            setTimeout(() => playSingleDing(), 2000);
+            setTimeout(() => playTripleDing(), 3500);
+            addLog("執行了語音、音效與桌面通知測試", "create");
+        }
+
+        function addAlarms() {
+            initAudio(); 
+            const locInput = document.getElementById('location').value.trim();
+            if (!locInput) return showModal("請填寫地點！");
+
+            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+            let timeExact = 0; const now = new Date();
+
+            if (mode === 'exact') {
+                const timeInput = document.getElementById('destroyTime').value;
+                if (!timeInput) return showModal("請填寫時間！");
+                const [hours, minutes] = timeInput.split(':').map(Number);
+                let destroyDate = new Date(); destroyDate.setHours(hours, minutes, 0, 0);
+                if (destroyDate <= now) destroyDate.setDate(destroyDate.getDate() + 1);
+                timeExact = destroyDate.getTime();
+            } else {
+                const h = parseInt(document.getElementById('remainH').value) || 0;
+                const m = parseInt(document.getElementById('remainM').value) || 0;
+                const s = parseInt(document.getElementById('remainS').value) || 0;
+                if (h === 0 && m === 0 && s === 0) return showModal("請填寫倒數時間！");
+                timeExact = now.getTime() + (h * 3600000) + (m * 60000) + (s * 1000);
+            }
+
+            const timePlus4Min = timeExact + (4 * 60 * 1000);                
+            const timePlus4M30S = timeExact + ((4 * 60) + 30) * 1000;        
+            const timePlus4M50S = timeExact + ((4 * 60) + 50) * 1000;        
+
+            createAlarm(locInput, timeExact, "exact");
+            createAlarm(locInput, timePlus4Min, "delayed");
+            createAlarm(locInput, timePlus4M30S, "ding1");
+            createAlarm(locInput, timePlus4M50S, "ding2");
+
+            const destroyTimeStr = new Date(timeExact).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            addLog(`設定了 <b>${locInput}</b> 的鬧鐘 (預計於 ${destroyTimeStr} 摧毀)`, 'create');
+
+            playAlertSound(`已為 ${locInput} 設定鬧鐘`);
+            document.getElementById('location').value = '';
+            
+            if(mode === 'exact') setNowTime();
+            else { document.getElementById('remainH').value = ''; document.getElementById('remainM').value = ''; document.getElementById('remainS').value = ''; }
+        }
+
+        function createAlarm(location, timestamp, type) {
+            const delay = timestamp - Date.now();
+            if (delay < 0) return;
+            const id = Date.now() + Math.random().toString(36).substr(2, 9);
+            const timeoutId = setTimeout(() => triggerAlarm(location, type, id), delay);
+            activeAlarms.push({ id, location, timestamp, type, timeoutId });
+            activeAlarms.sort((a, b) => a.timestamp - b.timestamp);
+            renderAlarms();
+        }
+
+        function triggerAlarm(location, type, id) {
+            let message = ""; let logMsg = "";
+            
+            if (type === "exact") {
+                message = `【${location}】已摧毀！`;
+                logMsg = `【${location}】已摧毀`;
+                playAlertSound(message);
+                showModal(message);
+                sendDesktopNotification("🍄 已摧毀！", message); // 觸發桌面通知
+                addLog(logMsg, 'trigger');
+
+            } else if (type === "delayed") {
+                message = `${location}1分鐘！`; 
+                logMsg = `【${location}】1分鐘`;
+                playAlertSound(message);
+                showModal(message);
+                sendDesktopNotification("⏳ 蘑菇即將冒出", message); // 觸發桌面通知
+                addLog(logMsg, 'trigger');
+
+            } else if (type === "ding1") {
+                playSingleDing();
+                logMsg = `【${location}】倒數30秒`;
+                addLog(logMsg, 'ding');
+
+            } else if (type === "ding2") {
+                playTripleDing();
+                logMsg = `【${location}】倒數10秒`;
+                addLog(logMsg, 'ding');
+            }
+
+            removeAlarm(id, false); 
+        }
+
+        function removeAlarm(id, isManual = true) {
+            const alarmIndex = activeAlarms.findIndex(a => a.id === id);
+            if (alarmIndex > -1) {
+                const alarm = activeAlarms[alarmIndex];
+                clearTimeout(alarm.timeoutId);
+                if (isManual) {
+                    let typeText = "";
+                    if (alarm.type === "exact") typeText = "已摧毀";
+                    else if (alarm.type === "delayed") typeText = "1分鐘";
+                    else if (alarm.type === "ding1") typeText = "倒數30秒";
+                    else if (alarm.type === "ding2") typeText = "倒數10秒";
+                    addLog(`刪除了 <b>${alarm.location}</b> (${typeText}) 的鬧鐘`, 'delete');
+                }
+                activeAlarms.splice(alarmIndex, 1);
+                renderAlarms();
+            }
+        }
+
+        function renderAlarms() {
+            const container = document.getElementById('alarmsContainer');
+            container.innerHTML = '';
+            if (activeAlarms.length === 0) return container.innerHTML = '<p style="color: #999; text-align: center; font-size: 14px;">目前沒有設定鬧鐘</p>';
+
+            activeAlarms.forEach(alarm => {
+                const timeString = new Date(alarm.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                let typeText = ""; let itemClass = "alarm-item";
+                if (alarm.type === "exact") { typeText = "已摧毀"; }
+                else if (alarm.type === "delayed") { typeText = "1分鐘"; itemClass += " delayed"; }
+                else if (alarm.type === "ding1") { typeText = "倒數30秒"; itemClass += " ding1"; }
+                else if (alarm.type === "ding2") { typeText = "倒數10秒"; itemClass += " ding2"; }
+
+                const div = document.createElement('div');
+                div.className = itemClass;
+                div.innerHTML = `
+                    <div class="alarm-info"><strong>${alarm.location}</strong><span>${timeString} (${typeText})</span></div>
+                    <button class="delete-btn" onclick="removeAlarm('${alarm.id}', true)">刪除</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function playAlertSound(textToSpeak) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.lang = 'zh-TW'; 
+                const voices = window.speechSynthesis.getVoices();
+                if(voices.length > 0) utterance.voice = voices.find(voice => voice.lang.includes('zh-TW')) || voices[0];
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+
+        function showModal(msg) { document.getElementById('modalMessage').innerText = msg; document.getElementById('customModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('customModal').style.display = 'none'; if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }
+        function setNowTime() {
+            const now = new Date();
+            document.getElementById('destroyTime').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
+        // PWA Service Worker 註冊
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW 註冊失敗', err));
+            });
+        }
+
+        window.onload = () => {
+            initQuickTags(); 
+            setNowTime();
+            renderAlarms();
+            checkNotificationStatus(); // 載入時檢查通知權限狀態
+        };
+    </script>
+</body>
+</html>
