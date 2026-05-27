@@ -3,107 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍄 皮克敏蘑菇討伐鬧鐘 (多人連線版)</title>
     <title>🍄 皮克敏蘑菇討伐鬧鐘 (雲端連線+紀錄同步版)</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ED1C24">
     <style>
-        :root { --pikmin-green: #8DC63F; --pikmin-blue: #00AEEF; --pikmin-red: #ED1C24; --pikmin-yellow: #FFF200; --bg-color: #F7F9F4; --card-bg: #FFFFFF; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: #333; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .layout-wrapper { display: flex; flex-direction: row; gap: 20px; width: 100%; max-width: 900px; justify-content: center; align-items: flex-start; }
-        .log-panel { background-color: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); width: 100%; max-width: 320px; border-top: 8px solid var(--pikmin-yellow); height: calc(100vh - 80px); position: sticky; top: 20px; display: flex; flex-direction: column; }
-        .container { background-color: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border-top: 8px solid var(--pikmin-red); }
-        h1, h2 { text-align: center; color: var(--pikmin-green); margin-top: 0; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        input[type="text"], input[type="time"], input[type="number"] { width: 100%; padding: 10px; border: 2px solid #E0E0E0; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: var(--pikmin-green); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .alarm-item { background-color: #FDFDFD; border: 1px solid #EEE; border-left: 5px solid var(--pikmin-blue); padding: 10px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .delete-btn { background-color: #FF5252; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
-        #logContainer { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .log-item { font-size: 13px; padding: 8px; border-radius: 6px; background: #f9f9f9; border-left: 4px solid #ccc; }
-    </style>
-</head>
-<body>
-    <div class="layout-wrapper">
+@@ -56,9 +56,9 @@
         <div class="log-panel">
             <h2>📜 操作紀錄</h2>
-            <div id="logContainer"><div class="log-item">雲端連線中...</div></div>
+            <div id="logContainer">
+                <div class="log-item" style="text-align:center; color:#999; border:none; background:none;">系統連線中...</div>
+                <div class="log-item" style="text-align:center; color:#999; border:none; background:none;">雲端連線中...</div>
+            </div>
+            <button class="log-clear-btn" onclick="clearLogs()">🗑️ 清空紀錄</button>
+            <button class="log-clear-btn" onclick="clearLogsBtn()">🗑️ 清空畫面紀錄</button>
         </div>
         <div class="container">
             <h1>🍄 蘑菇討伐鬧鐘</h1>
-            <input type="text" id="location" placeholder="📍 蘑菇地點">
-            <input type="time" id="destroyTime">
-            <button onclick="addAlarms()">🚀 設定鬧鐘 (即時同步)</button>
-            <div id="alarmsContainer"></div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAUedm9C7uo1fLlMWULOTZU52X_om3c4Vw",
-            databaseURL: "https://pickminalarm-default-rtdb.asia-southeast1.firebasedatabase.app/",
-            projectId: "pickminalarm"
-        };
-        const db = getDatabase(initializeApp(firebaseConfig));
+@@ -122,30 +122,30 @@
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
         const alarmsRef = ref(db, 'alarms');
+        const logsRef = ref(db, 'logs'); // 新增：雲端日誌資料夾
 
-        // --- 核心：即時 LINE 通知函式 ---
-        async function triggerLineNotification(location, type, destroyTime) {
-            try {
-                await fetch('https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec', { // 記得填入你部署好的網址
-                    method: 'POST',
-                    body: JSON.stringify({
-                        apiKey: "MySecret12345", 
-                        location: location,
-                        type: type,
-                        destroyTime: destroyTime
-                    })
-                });
-            } catch (e) { console.error(e); }
+        let activeAlarms = [];
+        let audioCtx = null;
+
+        // 你的自訂地點快捷鍵
+        const quickLocations = ["聖宮廟","禮拜堂","長老教會","三官大帝","三山宮","金爐","乾天羅","大蓮莊","元帝廟步道","蓮潭","南天宮", "孔子廟","船錨","少數民族","南門意象","泰山石敢當","進擊的紅貓","西門遺址", "和服小白", "菱形噴水池", "美術海", "酸菜白肉鍋"];
+
+        // 綁定到 window 使 HTML onclick 可以呼叫
+        // 綁定到 window 使 HTML 能夠點擊呼叫
+        window.requestNotificationPermission = requestNotificationPermission;
+        window.clearLogs = clearLogs;
+        window.clearLogsBtn = clearLogsBtn;
+        window.toggleInputMode = toggleInputMode;
+        window.testVoiceAndNotification = testVoiceAndNotification;
+        window.addAlarms = addAlarms;
+        window.removeAlarm = removeAlarm;
+        window.closeModal = closeModal;
+
+        // --- Firebase 雲端監聽器 (即時接收新增資料) ---
+        // --- 監聽 1：Firebase 鬧鐘同步 ---
+        onChildAdded(alarmsRef, (snapshot) => {
+            const data = snapshot.val();
+            const id = snapshot.key;
+            setupLocalAlarm(id, data.location, data.timestamp, data.type);
+        });
+
+        // --- Firebase 雲端監聽器 (即時接收刪除資料) ---
+        onChildRemoved(alarmsRef, (snapshot) => {
+            const id = snapshot.key;
+            const alarmIndex = activeAlarms.findIndex(a => a.id === id);
+@@ -157,7 +157,14 @@
+            }
+        });
+
+        // 檢查通知狀態
+        // --- 監聽 2：Firebase 雲端操作紀錄同步 ---
+        onChildAdded(logsRef, (snapshot) => {
+            const data = snapshot.val();
+            // 在每個人的螢幕畫面上，渲染這筆來自雲端的日誌紀錄
+            renderLogToScreen(data.message, data.type, data.timeStr);
+        });
+
+        // 檢查並更新通知按鈕
+        function checkNotificationStatus() {
+            const btn = document.getElementById('notifyBtn');
+            if (!("Notification" in window)) {
+@@ -171,11 +178,12 @@
+            if (!("Notification" in window)) return alert("您的瀏覽器不支援桌面通知功能。");
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    addLog("✅ 成功啟用 Windows 桌面通知", "create");
+                    // 本地通知啟用日誌，不傳雲端
+                    renderLogToScreen("✅ 成功啟用 Windows 桌面通知", "create", getNowTimeStr());
+                    checkNotificationStatus();
+                    new Notification("🍄 蘑菇鬧鐘", { body: "桌面通知功能已啟用！" });
+                } else {
+                    addLog("❌ 桌面通知權限被拒絕", "delete");
+                    renderLogToScreen("❌ 桌面通知權限被拒絕", "delete", getNowTimeStr());
+                }
+            });
+        }
+@@ -214,31 +222,53 @@
+        function playSingleDing() { initAudio(); playTone(880, 0, 0.5); }
+        function playTripleDing() { initAudio(); playTone(1046.5, 0, 0.15); playTone(1046.5, 0.2, 0.15); playTone(1046.5, 0.4, 0.15); }
+
+        function addLog(message, type) {
+        // 取得時間字串
+        function getNowTimeStr() {
+            return new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
 
-        // --- 設定鬧鐘 ---
-        window.addAlarms = function() {
-            const loc = document.getElementById('location').value;
-            const timeInput = document.getElementById('destroyTime').value;
-            if (!loc || !timeInput) return alert("請填寫完整");
-            
-            const [h, m] = timeInput.split(':');
-            let date = new Date(); date.setHours(h, m, 0, 0);
-            const T = date.getTime();
+        // 負責把紀錄推上 Firebase 雲端資料庫
+        function pushLogToCloud(message, type) {
+            push(logsRef, {
+                message: message,
+                type: type,
+                timeStr: getNowTimeStr()
+            });
+        }
 
-            push(alarmsRef, { location: loc, timestamp: T, type: "exact" });
-            push(alarmsRef, { location: loc, timestamp: T + 240000, type: "delayed" });
-            
-            triggerLineNotification(loc, "confirmed", timeInput);
-            alert("鬧鐘已設定！");
-        };
+        // 負責把日誌渲染到網頁畫面上
+        function renderLogToScreen(message, type, timeStr) {
+            const container = document.getElementById('logContainer');
+            if (container.children.length > 0 && container.children[0].innerText.includes('系統連線中')) container.innerHTML = '';
+            const timeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            if (container.children.length > 0 && (container.children[0].innerText.includes('雲端連線中') || container.children[0].innerText.includes('紀錄已清空'))) {
+                container.innerHTML = '';
+            }
+            const logItem = document.createElement('div');
+            logItem.className = `log-item log-${type}`; logItem.innerHTML = `<span class="log-time">${timeStr}</span> ${message}`;
+            logItem.className = `log-item log-${type}`; 
+            logItem.innerHTML = `<span class="log-time">${timeStr}</span> ${message}`;
+            container.prepend(logItem);
+        }
 
-        // --- 觸發鬧鐘 (修正版：精確刪除單一 ID) ---
+        function clearLogs() { document.getElementById('logContainer').innerHTML = '<div class="log-item" style="text-align:center; color:#999; border:none; background:none;">紀錄已清空</div>'; }
+        function clearLogsBtn() { 
+            document.getElementById('logContainer').innerHTML = '<div class="log-item" style="text-align:center; color:#999; border:none; background:none;">紀錄已清空</div>'; 
+        }
+
+        function toggleInputMode() {
+            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+            document.getElementById('mode-exact').classList.remove('active'); document.getElementById('mode-remain').classList.remove('active');
+            document.getElementById(`mode-${mode}`).classList.add('active');
+        }
+
+        // 🎯 測試按鈕功能：僅留在本地，不丟上雲端
+        function testVoiceAndNotification() {
+            initAudio(); playAlertSound("測試成功！");
+            sendDesktopNotification("🍄 測試通知", "這是一則來自蘑菇鬧鐘的桌面通知測試！");
+            setTimeout(() => playSingleDing(), 2000); setTimeout(() => playTripleDing(), 3500);
+            addLog("執行了語音、音效與桌面通知測試", "create");
+            
+            // 使用本地渲染，不發送雲端
+            renderLogToScreen("执行了语音、音效与桌面通知测试 (僅限本地預覽)", "create", getNowTimeStr());
+        }
+
+        // --- 將資料上傳到 Firebase ---
+        // --- 設定鬧鐘：同步上傳鬧鐘資料與「設定紀錄」到雲端 ---
+        function addAlarms() {
+            initAudio(); 
+            const locInput = document.getElementById('location').value.trim();
+@@ -266,14 +296,16 @@
+            const timePlus4M30S = timeExact + ((4 * 60) + 30) * 1000;                    
+            const timePlus4M50S = timeExact + ((4 * 60) + 50) * 1000;        
+
+            // Push 到 Firebase，其他人的網頁就會自動收到並設定鬧鐘
+            // 1. 同步鬧鐘到雲端
+            push(alarmsRef, { location: locInput, timestamp: timeExact, type: "exact" });
+            push(alarmsRef, { location: locInput, timestamp: timePlus4Min, type: "delayed" });
+            push(alarmsRef, { location: locInput, timestamp: timePlus4M30S, type: "ding1" });
+            push(alarmsRef, { location: locInput, timestamp: timePlus4M50S, type: "ding2" });
+
+            // 2. 🎯 【紀錄同步點 1】設定鬧鐘紀錄同步推上雲端
+            const destroyTimeStr = new Date(timeExact).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            addLog(`向雲端發送了 <b>${locInput}</b> 的鬧鐘 (預計於 ${destroyTimeStr} 摧毀)`, 'create');
+            pushLogToCloud(`向雲端發送了 <b>${locInput}</b> 的鬧鐘 (預計於 ${destroyTimeStr} 摧毀)`, 'create');
+
+            playAlertSound(`已為 ${locInput} 設定鬧鐘`);
+            document.getElementById('location').value = '';                        
+
+@@ -284,29 +316,42 @@
+        // --- 設定本地的計時器 ---
+        function setupLocalAlarm(id, location, timestamp, type) {
+            const delay = timestamp - Date.now();
+            if (delay < 0) return; // 如果時間已經過了，就不設定
+            if (delay < 0) return; 
+
+            const timeoutId = setTimeout(() => triggerAlarm(location, type, id), delay);
+            activeAlarms.push({ id, location, timestamp, type, timeoutId });
+            activeAlarms.sort((a, b) => a.timestamp - b.timestamp);
+            renderAlarms();
+        }
+
+        // --- 鬧鐘時間到：同步上傳「觸發紀錄」到雲端 ---
         function triggerAlarm(location, type, id) {
-            const timeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            let message = ""; let logMsg = "";                        
             
             if (type === "exact") {
-                triggerLineNotification(location, "destroyed", timeStr);
-                alert(`【${location}】已摧毀！`);
+                message = `【${location}】已摧毀！`; logMsg = `【${location}】已摧毀`;
+                playAlertSound(message); showModal(message); sendDesktopNotification("🍄 已摧毀！", message); addLog(logMsg, 'trigger');
+                playAlertSound(message); showModal(message); sendDesktopNotification("🍄 已摧毀！", message);
+                // 🎯 【紀錄同步點 2】已摧毀紀錄同步推上雲端
+                pushLogToCloud(logMsg, 'trigger');
+
             } else if (type === "delayed") {
-                triggerLineNotification(location, "warning", timeStr);
+                message = `${location}1分鐘！`; logMsg = `【${location}】1分鐘`;
+                playAlertSound(message); showModal(message); sendDesktopNotification("⏳ 蘑菇即將冒出", message); addLog(logMsg, 'trigger');
+                playAlertSound(message); showModal(message); sendDesktopNotification("⏳ 蘑菇即將冒出", message); 
+                // 🎯 【紀錄同步點 3】1分鐘紀錄同步推上雲端
+                pushLogToCloud(logMsg, 'trigger');
+
+            } else if (type === "ding1") {
+                playSingleDing(); logMsg = `【${location}】倒數30秒`; addLog(logMsg, 'ding');
+                playSingleDing(); logMsg = `【${location}】倒數30秒`; 
+                // 🎯 【紀錄同步點 4】倒數30秒紀錄同步推上雲端
+                pushLogToCloud(logMsg, 'ding');
+
+            } else if (type === "ding2") {
+                playTripleDing(); logMsg = `【${location}】倒數10秒`; addLog(logMsg, 'ding');            
+                playTripleDing(); logMsg = `【${location}】倒數10秒`; 
+                // 🎯 【紀錄同步點 5】倒數10秒紀錄同步推上雲端
+                pushLogToCloud(logMsg, 'ding');            
             }
 
-            // 只刪除當下觸發的這筆 ID，不影響其他鬧鐘
+            // 觸發後，從 Firebase 中移除這筆資料 (這會讓所有人的畫面也一起清掉)
+            // 觸發後，從 Firebase 中移除鬧鐘資料
             remove(ref(db, 'alarms/' + id));
         }
 
-        // 監聽器設定
-        onChildAdded(alarmsRef, (snapshot) => {
-            const id = snapshot.key;
-            const data = snapshot.val();
-            const delay = data.timestamp - Date.now();
-            if (delay > 0) setTimeout(() => triggerAlarm(data.location, data.type, id), delay);
-        });
-
-        // 刪除按鈕
-        window.removeAlarm = (id) => remove(ref(db, 'alarms/' + id));
-    </script>
-</body>
-</html>
+@@ -317,10 +362,10 @@
+                if (alarm) {
+                    let typeText = "";
+                    if (alarm.type === "exact") typeText = "已摧毀"; else if (alarm.type === "delayed") typeText = "1分鐘"; else if (alarm.type === "ding1") typeText = "倒數30秒"; else if (alarm.type === "ding2") typeText = "倒數10秒";
+                    addLog(`從雲端刪除了 <b>${alarm.location}</b> (${typeText})`, 'delete');
+                    // 手動刪除也同步推上雲端，告知其他夥伴
+                    pushLogToCloud(`從雲端刪除了 <b>${alarm.location}</b> (${typeText})`, 'delete');
+                }
+            }
+            // 呼叫 Firebase 刪除，讓大家一起更新
+            remove(ref(db, 'alarms/' + id));
+        }
