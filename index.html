@@ -797,6 +797,9 @@ function addAlarms(){
 
     pushLogToCloud(`建立 ${location} 鬧鐘`,'create');
 
+    // --- 這裡加上語音反饋 ---
+    playAlertSound(`已為 ${location} 設定鬧鐘`);
+    
     document.getElementById('location').value='';
 
 }
