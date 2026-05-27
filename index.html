@@ -1,833 +1,1064 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
-
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta charset="UTF-8">
+<title>🍄 皮克敏蘑菇討伐鬧鐘</title>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ED1C24">
 
-    <title>🍄 皮克敏蘑菇討伐鬧鐘 (雲端連線+紀錄同步版)</title>
+<style>
 
-    <link rel="manifest" href="manifest.json">
+:root{
+    --pikmin-green:#8DC63F;
+    --pikmin-blue:#00AEEF;
+    --pikmin-red:#ED1C24;
+    --pikmin-yellow:#FFF200;
+    --bg-color:#F7F9F4;
+    --card-bg:#FFFFFF;
+}
 
-    <meta name="theme-color" content="#ED1C24">
+body{
+    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    background-color:var(--bg-color);
+    color:#333;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    min-height:100vh;
+    margin:0;
+    padding:20px;
+    box-sizing:border-box;
+}
 
-    <style>
+.layout-wrapper{
+    display:flex;
+    flex-direction:row;
+    gap:20px;
+    width:100%;
+    max-width:900px;
+    justify-content:center;
+    align-items:flex-start;
+}
 
-        :root {
+.log-panel{
+    background-color:var(--card-bg);
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.05);
+    width:100%;
+    max-width:320px;
+    border-top:8px solid var(--pikmin-yellow);
+    height:calc(100vh - 80px);
+    position:sticky;
+    top:20px;
+    display:flex;
+    flex-direction:column;
+}
 
-            --pikmin-green: #8DC63F; --pikmin-blue: #00AEEF;
+.container{
+    background-color:var(--card-bg);
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    width:100%;
+    max-width:400px;
+    border-top:8px solid var(--pikmin-red);
+}
 
-            --pikmin-red: #ED1C24; --pikmin-yellow: #FFF200;
+@media (max-width:768px){
+    .layout-wrapper{
+        flex-direction:column;
+        align-items:center;
+    }
 
-            --bg-color: #F7F9F4; --card-bg: #FFFFFF;
+    .log-panel{
+        order:2;
+        height:400px;
+        position:static;
+        max-width:400px;
+    }
 
-        }
+    .container{
+        order:1;
+    }
+}
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: #333; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+h1,h2{
+    text-align:center;
+    color:var(--pikmin-green);
+    margin-top:0;
+    margin-bottom:20px;
+}
 
-        .layout-wrapper { display: flex; flex-direction: row; gap: 20px; width: 100%; max-width: 900px; justify-content: center; align-items: flex-start; }
+.log-panel h2{
+    font-size:20px;
+    color:#f5b041;
+    border-bottom:2px solid #EEE;
+    padding-bottom:10px;
+}
 
-        .log-panel { background-color: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); width: 100%; max-width: 320px; border-top: 8px solid var(--pikmin-yellow); height: calc(100vh - 80px); position: sticky; top: 20px; display: flex; flex-direction: column; }
+.form-group{
+    margin-bottom:15px;
+}
 
-        .container { background-color: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border-top: 8px solid var(--pikmin-red); }
+label{
+    display:block;
+    margin-bottom:5px;
+    font-weight:bold;
+    color:#555;
+}
 
-        @media (max-width: 768px) { .layout-wrapper { flex-direction: column; align-items: center; } .log-panel { order: 2; height: 400px; position: static; max-width: 400px; } .container { order: 1; } }
+input[type="text"],
+input[type="time"],
+input[type="number"]{
+    width:100%;
+    padding:10px;
+    border:2px solid #E0E0E0;
+    border-radius:8px;
+    font-size:16px;
+    box-sizing:border-box;
+}
 
-        h1, h2 { text-align: center; color: var(--pikmin-green); margin-top: 0; margin-bottom: 20px; }
+input:focus{
+    border-color:var(--pikmin-blue);
+    outline:none;
+}
 
-        .log-panel h2 { font-size: 20px; color: #f5b041; border-bottom: 2px solid #EEE; padding-bottom: 10px; }
+.quick-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+}
 
-        .form-group { margin-bottom: 15px; }
+.tag-btn{
+    background:#f0f9ff;
+    color:var(--pikmin-blue);
+    border:1px solid #bae6fd;
+    padding:6px 12px;
+    border-radius:15px;
+    cursor:pointer;
+    font-size:13px;
+}
 
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+.tag-btn:hover{
+    background:var(--pikmin-blue);
+    color:white;
+}
 
-        input[type="text"], input[type="time"], input[type="number"] { width: 100%; padding: 10px; border: 2px solid #E0E0E0; border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: border-color 0.3s; }
+.mode-tabs{
+    display:flex;
+    margin-bottom:15px;
+    background:#eee;
+    border-radius:8px;
+    padding:4px;
+}
 
-        input[type="text"]:focus, input[type="time"]:focus, input[type="number"]:focus { border-color: var(--pikmin-blue); outline: none; }
+.mode-tabs label{
+    flex:1;
+    text-align:center;
+    margin:0;
+    cursor:pointer;
+}
 
-        .quick-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.mode-tabs input{
+    display:none;
+}
 
-        .tag-btn { background-color: #f0f9ff; color: var(--pikmin-blue); border: 1px solid #bae6fd; padding: 6px 12px; border-radius: 15px; font-size: 13px; cursor: pointer; width: auto; margin-top: 0; font-weight: normal; transition: 0.2s; }
+.mode-tabs span{
+    display:block;
+    padding:8px 0;
+    border-radius:6px;
+}
 
-        .tag-btn:hover { background-color: var(--pikmin-blue); color: white; }
+.mode-tabs input:checked + span{
+    background:white;
+    color:var(--pikmin-blue);
+    font-weight:bold;
+}
 
-        .mode-tabs { display: flex; margin-bottom: 15px; background: #eee; border-radius: 8px; padding: 4px; }
+.countdown-group{
+    display:flex;
+    gap:10px;
+}
 
-        .mode-tabs label { flex: 1; text-align: center; margin: 0; padding: 8px 0; cursor: pointer; border-radius: 6px; font-size: 14px; transition: 0.3s; color: #666; }
+.countdown-group input{
+    text-align:center;
+}
 
-        .mode-tabs input[type="radio"] { display: none; }
+.input-section{
+    display:none;
+}
 
-        .mode-tabs input[type="radio"]:checked + span { background: white; color: var(--pikmin-blue); box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: block; border-radius: 6px; font-weight: bold; }
+.input-section.active{
+    display:block;
+}
 
-        .countdown-group { display: flex; gap: 10px; } .countdown-group input { text-align: center; }
+button{
+    width:100%;
+    padding:12px;
+    background-color:var(--pikmin-green);
+    color:white;
+    border:none;
+    border-radius:8px;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:5px;
+}
 
-        .input-section { display: none; } .input-section.active { display: block; animation: fadeIn 0.3s; }
+button:hover{
+    opacity:0.9;
+}
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.notify-btn{
+    background:var(--pikmin-blue);
+    font-size:16px;
+    margin-bottom:15px;
+}
 
-        button { width: 100%; padding: 12px; background-color: var(--pikmin-green); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 5px; }
+.notify-btn.granted{
+    background:#ccc;
+    cursor:not-allowed;
+}
 
-        button:hover { background-color: #7BB035; } button:active { transform: scale(0.98); }
+.test-btn{
+    background:#f0f0f0;
+    color:#555;
+    font-size:14px;
+    border:1px solid #ccc;
+}
 
-        .test-btn { background-color: #f0f0f0; color: #555; font-size: 14px; padding: 8px; margin-top: 10px; border: 1px solid #ccc; } .test-btn:hover { background-color: #e0e0e0; }
+.alarm-list{
+    margin-top:30px;
+}
 
-        .notify-btn { background-color: var(--pikmin-blue); margin-bottom: 15px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; } .notify-btn.granted { background-color: #ccc; cursor: not-allowed; }
+.alarm-item{
+    background:#FDFDFD;
+    border:1px solid #EEE;
+    border-left:5px solid var(--pikmin-blue);
+    padding:10px 15px;
+    border-radius:6px;
+    margin-bottom:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:14px;
+}
 
-        .alarm-list { margin-top: 30px; } .alarm-list h2 { font-size: 18px; margin-bottom: 15px; color: var(--pikmin-green); }
+.alarm-item.delayed{
+    border-left-color:var(--pikmin-yellow);
+}
 
-        .alarm-item { background-color: #FDFDFD; border: 1px solid #EEE; border-left: 5px solid var(--pikmin-blue); padding: 10px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+.alarm-item.ding1{
+    border-left-color:#f5b041;
+}
 
-        .alarm-item.delayed { border-left-color: var(--pikmin-yellow); } .alarm-item.ding1 { border-left-color: #f5b041; background-color: #fdfaf4; } .alarm-item.ding2 { border-left-color: #e67e22; background-color: #fdf5f0; }
+.alarm-item.ding2{
+    border-left-color:#e67e22;
+}
 
-        .alarm-info strong { display: block; font-size: 16px; margin-bottom: 3px; } .delete-btn { background-color: #FF5252; color: white; padding: 5px 10px; border-radius: 4px; width: auto; margin-top: 0; font-size: 12px; }
+.delete-btn{
+    background:#FF5252;
+    width:auto;
+    padding:5px 10px;
+    font-size:12px;
+}
 
-        #logContainer { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 5px; }
+#logContainer{
+    flex-grow:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
 
-        .log-item { font-size: 13px; padding: 8px; border-radius: 6px; background: #f9f9f9; border-left: 4px solid #ccc; line-height: 1.4; } .log-time { color: #888; font-size: 11px; display: block; margin-bottom: 2px; }
+.log-item{
+    font-size:13px;
+    padding:8px;
+    border-radius:6px;
+    background:#f9f9f9;
+    border-left:4px solid #ccc;
+}
 
-        .log-create { border-left-color: var(--pikmin-blue); background: #f0f9ff; } .log-trigger { border-left-color: var(--pikmin-red); background: #fff0f0; } .log-ding { border-left-color: #e67e22; background: #fdf5f0; } .log-delete { border-left-color: #999; background: #f5f5f5; color: #666; } .log-clear-btn { background-color: #eee; color: #555; padding: 6px; font-size: 12px; margin-top: 10px; border: none;}
+.log-time{
+    color:#888;
+    font-size:11px;
+    display:block;
+    margin-bottom:2px;
+}
 
-        #customModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+.log-create{ border-left-color:var(--pikmin-blue); }
+.log-trigger{ border-left-color:var(--pikmin-red); }
+.log-ding{ border-left-color:#e67e22; }
+.log-delete{ border-left-color:#999; }
 
-        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 300px; border-top: 8px solid var(--pikmin-red); animation: popIn 0.3s ease-out; }
+#customModal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+}
 
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-content{
+    background:white;
+    padding:30px;
+    border-radius:15px;
+    text-align:center;
+    max-width:300px;
+    border-top:8px solid var(--pikmin-red);
+}
 
-        .modal-content h3 { margin-top: 0; color: #333; } .modal-content p { font-size: 16px; color: #555; line-height: 1.5; margin-bottom: 20px;} .close-modal-btn { background-color: var(--pikmin-blue); width: auto; padding: 10px 20px; font-size: 16px; }
-
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; } ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #aaa; }
-
-    </style>
-
+</style>
 </head>
 
 <body>
 
-    <div class="layout-wrapper">
+<div class="layout-wrapper">
 
-        <div class="log-panel">
+<div class="log-panel">
 
-            <h2>📜 操作紀錄</h2>
+<h2>📜 操作紀錄</h2>
 
-            <div id="logContainer">
+<div id="logContainer">
+<div class="log-item">雲端連線中...</div>
+</div>
 
-                <div class="log-item" style="text-align:center; color:#999; border:none; background:none;">雲端連線中...</div>
+<button class="test-btn" onclick="clearLogsBtn()">🗑️ 清空畫面紀錄</button>
 
-            </div>
+</div>
 
-            <button class="log-clear-btn" onclick="clearLogsBtn()">🗑️ 清空畫面紀錄</button>
+<div class="container">
 
-        </div>
+<h1>🍄 蘑菇討伐鬧鐘</h1>
 
-        <div class="container">
+<button id="notifyBtn" class="notify-btn" onclick="requestNotificationPermission()">
+🔔 開啟桌面通知
+</button>
 
-            <h1>🍄 蘑菇討伐鬧鐘</h1>
+<div class="form-group">
 
-            <button id="notifyBtn" class="notify-btn" onclick="requestNotificationPermission()">🔔 點我開啟「Windows 桌面通知」</button>
+<label>📍 地點：</label>
 
-            <div class="form-group">
+<input type="text" id="location" placeholder="例如：公園">
 
-                <label for="location">📍 蘑菇地點：</label>
+<div class="quick-tags" id="quickTagsContainer"></div>
 
-                <input type="text" id="location" placeholder="例如：公園入口" required>
+</div>
 
-                <div class="quick-tags" id="quickTagsContainer"></div>
+<div class="mode-tabs">
 
-            </div>
+<label>
+<input type="radio" name="inputMode" value="exact" checked onchange="toggleInputMode()">
+<span>🕒 指定時間</span>
+</label>
 
-            <div class="mode-tabs">
+<label>
+<input type="radio" name="inputMode" value="remain" onchange="toggleInputMode()">
+<span>⏳ 剩餘時間</span>
+</label>
 
-                <label><input type="radio" name="inputMode" value="exact" checked onchange="toggleInputMode()"><span>🕒 指定時間</span></label>
+</div>
 
-                <label><input type="radio" name="inputMode" value="remain" onchange="toggleInputMode()"><span>⏳ 剩餘時間</span></label>
+<div id="mode-exact" class="input-section active">
 
-            </div>
+<div class="form-group">
+<label>預計摧毀時間：</label>
+<input type="time" id="destroyTime">
+</div>
 
-            <div id="mode-exact" class="input-section active">
+</div>
 
-                <div class="form-group"><label>⏱️ 預計摧毀時間：</label><input type="time" id="destroyTime"></div>
+<div id="mode-remain" class="input-section">
 
-            </div>
+<div class="form-group">
 
-            <div id="mode-remain" class="input-section">
+<label>倒數時間：</label>
 
-                <div class="form-group">
+<div class="countdown-group">
+<input type="number" id="remainH" placeholder="時">
+<input type="number" id="remainM" placeholder="分">
+<input type="number" id="remainS" placeholder="秒">
+</div>
 
-                    <label>倒數多久摧毀 (小時/分/秒)：</label>
+</div>
 
-                    <div class="countdown-group">
+</div>
 
-                        <input type="number" id="remainH" placeholder="時" min="0" max="99">
+<button onclick="addAlarms()">🚀 設定鬧鐘</button>
 
-                        <input type="number" id="remainM" placeholder="分" min="0" max="59">
+<button class="test-btn" onclick="testVoiceAndNotification()">
+🔊 測試通知
+</button>
 
-                        <input type="number" id="remainS" placeholder="秒" min="0" max="59">
+<div class="alarm-list">
 
-                    </div>
+<h2>⏳ 雲端同步中的提醒</h2>
 
-                </div>
+<div id="alarmsContainer"></div>
 
-            </div>
+</div>
 
-            <button onclick="addAlarms()">🚀 設定鬧鐘 (同步雲端)</button>
+</div>
 
-            <button class="test-btn" onclick="testVoiceAndNotification()">🔊 測試語音、音效與桌面通知</button>
+</div>
 
-            <div class="alarm-list">
+<div id="customModal">
 
-                <h2>⏳ 雲端同步中的提醒</h2>
+<div class="modal-content">
 
-                <div id="alarmsContainer"></div>
+<h3>⏰ 蘑菇提醒</h3>
 
-            </div>
+<p id="modalMessage"></p>
 
-        </div>
+<button onclick="closeModal()">我知道了</button>
 
-    </div>
+</div>
 
-    <div id="customModal">
+</div>
 
-        <div class="modal-content">
+<script type="module">
 
-            <h3>⏰ 蘑菇提醒</h3>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 
-            <p id="modalMessage">訊息內容</p>
+import {
+    getDatabase,
+    ref,
+    push,
+    onChildAdded,
+    onChildRemoved,
+    remove
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-            <button class="close-modal-btn" onclick="closeModal()">我知道了</button>
+/* Firebase */
 
-        </div>
+const firebaseConfig = {
 
-    </div>
+    apiKey: "AIzaSyAUedm9C7uo1fLlMWULOTZU52X_om3c4Vw",
+    authDomain: "pickminalarm.firebaseapp.com",
+    databaseURL: "https://pickminalarm-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    projectId: "pickminalarm",
+    storageBucket: "pickminalarm.firebasestorage.app",
+    messagingSenderId: "886140078183",
+    appId: "1:886140078183:web:617f1629a1f2689660ecc2"
 
+};
 
+const app = initializeApp(firebaseConfig);
 
-    <script type="module">
+const db = getDatabase(app);
 
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+const alarmsRef = ref(db, 'alarms');
 
-        import { getDatabase, ref, push, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+const logsRef = ref(db, 'logs');
 
+/* Apps Script */
 
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec";
 
-        // ==========================================
+const API_KEY = "MySecret12345";
 
-        // 你的專屬 Firebase 雲端資料庫設定
+/* State */
 
-        // ==========================================
+let activeAlarms = [];
 
-        const firebaseConfig = {
+let audioCtx = null;
 
-            apiKey: "AIzaSyAUedm9C7uo1fLlMWULOTZU52X_om3c4Vw",
+/* Quick tags */
 
-            authDomain: "pickminalarm.firebaseapp.com",
+const quickLocations = [
+    "聖宮廟",
+    "長老教會",
+    "三官大帝",
+    "蓮潭",
+    "孔子廟"
+];
 
-            databaseURL: "https://pickminalarm-default-rtdb.asia-southeast1.firebasedatabase.app/",
+/* Window binding */
 
-            projectId: "pickminalarm",
+window.requestNotificationPermission = requestNotificationPermission;
+window.clearLogsBtn = clearLogsBtn;
+window.toggleInputMode = toggleInputMode;
+window.testVoiceAndNotification = testVoiceAndNotification;
+window.addAlarms = addAlarms;
+window.removeAlarm = removeAlarm;
+window.closeModal = closeModal;
 
-            storageBucket: "pickminalarm.firebasestorage.app",
+/* Firebase listeners */
 
-            messagingSenderId: "886140078183",
+onChildAdded(alarmsRef, (snapshot) => {
 
-            appId: "1:886140078183:web:617f1629a1f2689660ecc2"
+    const data = snapshot.val();
 
+    setupLocalAlarm(
+        snapshot.key,
+        data.location,
+        data.timestamp,
+        data.type
+    );
+
+});
+
+onChildRemoved(alarmsRef, (snapshot) => {
+
+    const id = snapshot.key;
+
+    const alarmIndex = activeAlarms.findIndex(a => a.id === id);
+
+    if (alarmIndex > -1) {
+
+        clearTimeout(activeAlarms[alarmIndex].timeoutId);
+
+        activeAlarms.splice(alarmIndex, 1);
+
+        renderAlarms();
+    }
+
+});
+
+onChildAdded(logsRef, (snapshot) => {
+
+    const data = snapshot.val();
+
+    renderLogToScreen(
+        data.message,
+        data.type,
+        data.timeStr
+    );
+
+});
+
+/* Notification */
+
+function requestNotificationPermission(){
+
+    if(!("Notification" in window)) return;
+
+    Notification.requestPermission().then(permission => {
+
+        if(permission === "granted"){
+
+            checkNotificationStatus();
+
+            new Notification("🍄 通知已啟用");
+
+        }
+
+    });
+
+}
+
+function checkNotificationStatus(){
+
+    const btn = document.getElementById('notifyBtn');
+
+    if(Notification.permission === "granted"){
+
+        btn.innerText = "✅ 已啟用桌面通知";
+
+        btn.classList.add("granted");
+
+        btn.disabled = true;
+
+    }
+
+}
+
+function sendDesktopNotification(title,message){
+
+    if(Notification.permission === "granted"){
+
+        new Notification(title,{
+            body:message,
+            icon:"icon.png"
+        });
+
+    }
+
+}
+
+/* LINE */
+
+function triggerLineNotification(location,type,destroyTime=''){
+
+    fetch(WEB_APP_URL, {
+
+        method:'POST',
+
+        headers:{
+            'Content-Type':'application/json'
+        },
+
+        keepalive:true,
+
+        body:JSON.stringify({
+            apiKey:API_KEY,
+            action:"sendNotification",
+            location,
+            type,
+            destroyTime
+        })
+
+    })
+    .then(res => res.text())
+    .then(data => console.log(data))
+    .catch(err => console.error(err));
+
+}
+
+/* Quick tag */
+
+function initQuickTags(){
+
+    const container = document.getElementById('quickTagsContainer');
+
+    quickLocations.forEach(loc => {
+
+        const btn = document.createElement('button');
+
+        btn.className = 'tag-btn';
+
+        btn.type = 'button';
+
+        btn.textContent = loc;
+
+        btn.onclick = () => {
+            document.getElementById('location').value = loc;
         };
 
+        container.appendChild(btn);
 
+    });
 
-        // 初始化 Firebase
+}
 
-        const app = initializeApp(firebaseConfig);
+/* Audio */
 
-        const db = getDatabase(app);
+function initAudio(){
 
-        const alarmsRef = ref(db, 'alarms');
+    if(!audioCtx){
 
-        const logsRef = ref(db, 'logs'); // 新增：雲端日誌資料夾
+        audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
+    }
 
+}
 
-        let activeAlarms = [];
+function playTone(freq,start,duration){
 
-        let audioCtx = null;
+    initAudio();
 
-        
+    const osc = audioCtx.createOscillator();
 
-        // 你的自訂地點快捷鍵
+    const gain = audioCtx.createGain();
 
-        const quickLocations = ["聖宮廟","禮拜堂","長老教會","三官大帝","三山宮","金爐","乾天羅","大蓮莊","元帝廟步道","蓮潭","南天宮", "孔子廟","船錨","少數民族","南門意象","泰山石敢當","進擊的紅貓","西門遺址", "和服小白", "菱形噴水池", "美術海", "酸菜白肉鍋"];
+    osc.frequency.value = freq;
 
+    osc.connect(gain);
 
+    gain.connect(audioCtx.destination);
 
-        // 綁定到 window 使 HTML 能夠點擊呼叫
+    osc.start(audioCtx.currentTime + start);
 
-        window.requestNotificationPermission = requestNotificationPermission;
+    osc.stop(audioCtx.currentTime + start + duration);
 
-        window.clearLogsBtn = clearLogsBtn;
+}
 
-        window.toggleInputMode = toggleInputMode;
+function playSingleDing(){
 
-        window.testVoiceAndNotification = testVoiceAndNotification;
+    playTone(880,0,0.5);
 
-        window.addAlarms = addAlarms;
+}
 
-        window.removeAlarm = removeAlarm;
+function playTripleDing(){
 
-        window.closeModal = closeModal;
+    playTone(1046,0,0.15);
 
+    playTone(1046,0.2,0.15);
 
+    playTone(1046,0.4,0.15);
 
-        // --- 監聽 1：Firebase 鬧鐘同步 ---
+}
 
-        onChildAdded(alarmsRef, (snapshot) => {
+/* Alarm add */
 
-            const data = snapshot.val();
+function addAlarms(){
 
-            const id = snapshot.key;
+    initAudio();
 
-            setupLocalAlarm(id, data.location, data.timestamp, data.type);
+    const location = document.getElementById('location').value.trim();
 
-        });
+    if(!location){
 
+        showModal("請輸入地點");
 
+        return;
 
-        onChildRemoved(alarmsRef, (snapshot) => {
+    }
 
-            const id = snapshot.key;
+    const mode = document.querySelector('input[name="inputMode"]:checked').value;
 
-            const alarmIndex = activeAlarms.findIndex(a => a.id === id);
+    let targetTime = 0;
 
-            if (alarmIndex > -1) {
+    const now = new Date();
 
-                const alarm = activeAlarms[alarmIndex];
+    if(mode === 'exact'){
 
-                clearTimeout(alarm.timeoutId);
+        const timeInput = document.getElementById('destroyTime').value;
 
-                activeAlarms.splice(alarmIndex, 1);
+        if(!timeInput){
 
-                renderAlarms();
+            showModal("請輸入時間");
 
-            }
-
-        });
-
-
-
-        // --- 監聽 2：Firebase 雲端操作紀錄同步 ---
-
-        onChildAdded(logsRef, (snapshot) => {
-
-            const data = snapshot.val();
-
-            // 在每個人的螢幕畫面上，渲染這筆來自雲端的日誌紀錄
-
-            renderLogToScreen(data.message, data.type, data.timeStr);
-
-        });
-
-
-
-        // 檢查並更新通知按鈕
-
-        function checkNotificationStatus() {
-
-            const btn = document.getElementById('notifyBtn');
-
-            if (!("Notification" in window)) {
-
-                btn.innerText = "❌ 此瀏覽器不支援桌面通知"; btn.classList.add("granted"); btn.disabled = true;
-
-            } else if (Notification.permission === "granted") {
-
-                btn.innerText = "✅ 桌面通知已啟用"; btn.classList.add("granted"); btn.disabled = true;
-
-            }
+            return;
 
         }
 
+        const [h,m] = timeInput.split(':').map(Number);
 
+        const date = new Date();
 
-        function requestNotificationPermission() {
+        date.setHours(h,m,0,0);
 
-            if (!("Notification" in window)) return alert("您的瀏覽器不支援桌面通知功能。");
+        if(date <= now){
 
-            Notification.requestPermission().then(permission => {
-
-                if (permission === "granted") {
-
-                    // 本地通知啟用日誌，不傳雲端
-
-                    renderLogToScreen("✅ 成功啟用 Windows 桌面通知", "create", getNowTimeStr());
-
-                    checkNotificationStatus();
-
-                    new Notification("🍄 蘑菇鬧鐘", { body: "桌面通知功能已啟用！" });
-
-                } else {
-
-                    renderLogToScreen("❌ 桌面通知權限被拒絕", "delete", getNowTimeStr());
-
-                }
-
-            });
+            date.setDate(date.getDate() + 1);
 
         }
 
+        targetTime = date.getTime();
 
+    }else{
 
-        function sendDesktopNotification(title, message) {
+        const h = parseInt(document.getElementById('remainH').value)||0;
+        const m = parseInt(document.getElementById('remainM').value)||0;
+        const s = parseInt(document.getElementById('remainS').value)||0;
 
-            if ("Notification" in window && Notification.permission === "granted") {
+        targetTime = now.getTime() + (h*3600000) + (m*60000) + (s*1000);
 
-                new Notification(title, { body: message, icon: "icon.png" });
+    }
 
-            }
+    const plus4m = targetTime + 240000;
+    const plus4m30 = targetTime + 270000;
+    const plus4m50 = targetTime + 290000;
 
-        }
+    push(alarmsRef,{
+        location,
+        timestamp:targetTime,
+        type:"exact"
+    });
 
+    push(alarmsRef,{
+        location,
+        timestamp:plus4m,
+        type:"delayed"
+    });
 
+    push(alarmsRef,{
+        location,
+        timestamp:plus4m30,
+        type:"ding1"
+    });
 
-        function initQuickTags() {
+    push(alarmsRef,{
+        location,
+        timestamp:plus4m50,
+        type:"ding2"
+    });
 
-            const container = document.getElementById('quickTagsContainer');
+    const destroyTimeStr = new Date(targetTime).toLocaleTimeString('zh-TW');
 
-            quickLocations.forEach(loc => {
+    triggerLineNotification(location,"confirmed",destroyTimeStr);
 
-                const btn = document.createElement('button');
+    pushLogToCloud(`建立 ${location} 鬧鐘`,'create');
 
-                btn.type = 'button'; btn.className = 'tag-btn'; btn.innerText = loc;
+    document.getElementById('location').value='';
 
-                btn.onclick = () => document.getElementById('location').value = loc;
+}
 
-                container.appendChild(btn);
+/* Setup */
 
-            });
+function setupLocalAlarm(id,location,timestamp,type){
 
-        }
+    if(activeAlarms.some(a => a.id === id)){
 
+        return;
 
+    }
 
-        function initAudio() {
+    const delay = timestamp - Date.now();
 
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(delay < 0) return;
 
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+    if(delay > 86400000) return;
 
-        }
+    const timeoutId = setTimeout(() => {
 
+        triggerAlarm(location,type,id,timestamp);
 
+    },delay);
 
-        function playTone(freq, startTimeOffset, duration) {
+    activeAlarms.push({
+        id,
+        location,
+        timestamp,
+        type,
+        timeoutId
+    });
 
-            if (!audioCtx) return;
+    activeAlarms.sort((a,b) => a.timestamp - b.timestamp);
 
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine';
+    renderAlarms();
 
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + startTimeOffset);
+}
 
-            gain.gain.setValueAtTime(1, audioCtx.currentTime + startTimeOffset);
+/* Trigger */
 
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + startTimeOffset + duration);
+function triggerAlarm(location,type,id,timestamp){
 
-            osc.connect(gain); gain.connect(audioCtx.destination);
+    if(Date.now() < timestamp - 3000){
 
-            osc.start(audioCtx.currentTime + startTimeOffset); osc.stop(audioCtx.currentTime + startTimeOffset + duration);
+        return;
 
-        }
+    }
 
+    let message = "";
 
+    if(type === "exact"){
 
-        function playSingleDing() { initAudio(); playTone(880, 0, 0.5); }
+        message = `【${location}】已摧毀！`;
 
-        function playTripleDing() { initAudio(); playTone(1046.5, 0, 0.15); playTone(1046.5, 0.2, 0.15); playTone(1046.5, 0.4, 0.15); }
+        playAlertSound(message);
 
+        showModal(message);
 
+        sendDesktopNotification("🍄 已摧毀",message);
 
-        // 取得時間字串
+        triggerLineNotification(location,"destroyed");
 
-        function getNowTimeStr() {
+        pushLogToCloud(message,'trigger');
 
-            return new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
 
-        }
+    else if(type === "delayed"){
 
+        message = `${location} 1分鐘`;
 
+        playAlertSound(message);
 
-        // 負責把紀錄推上 Firebase 雲端資料庫
+        showModal(message);
 
-        function pushLogToCloud(message, type) {
+        sendDesktopNotification("⚠️ 1分鐘",message);
 
-            push(logsRef, {
+        triggerLineNotification(location,"warning");
 
-                message: message,
+        pushLogToCloud(message,'trigger');
 
-                type: type,
+    }
 
-                timeStr: getNowTimeStr()
+    else if(type === "ding1"){
 
-            });
+        playSingleDing();
 
-        }
+        pushLogToCloud(`${location} 倒數30秒`,'ding');
 
+    }
 
+    else if(type === "ding2"){
 
-        // 負責把日誌渲染到網頁畫面上
+        playTripleDing();
 
-        function renderLogToScreen(message, type, timeStr) {
+        pushLogToCloud(`${location} 倒數10秒`,'ding');
 
-            const container = document.getElementById('logContainer');
+    }
 
-            if (container.children.length > 0 && (container.children[0].innerText.includes('雲端連線中') || container.children[0].innerText.includes('紀錄已清空'))) {
+    remove(ref(db,'alarms/' + id));
 
-                container.innerHTML = '';
+    activeAlarms = activeAlarms.filter(a => a.id !== id);
 
-            }
+    renderAlarms();
 
-            const logItem = document.createElement('div');
+}
 
-            logItem.className = `log-item log-${type}`; 
+/* Render */
 
-            logItem.innerHTML = `<span class="log-time">${timeStr}</span> ${message}`;
+function renderAlarms(){
 
-            container.prepend(logItem);
+    const container = document.getElementById('alarmsContainer');
 
-        }
+    container.innerHTML='';
 
+    if(activeAlarms.length === 0){
 
+        container.innerHTML = '<p>目前沒有鬧鐘</p>';
 
-        function clearLogsBtn() { 
+        return;
 
-            document.getElementById('logContainer').innerHTML = '<div class="log-item" style="text-align:center; color:#999; border:none; background:none;">紀錄已清空</div>'; 
+    }
 
-        }
+    activeAlarms.forEach(alarm => {
 
+        const div = document.createElement('div');
 
+        div.className = 'alarm-item';
 
-        function toggleInputMode() {
+        div.innerHTML = `
+            <div>
+                <strong>${alarm.location}</strong>
+                <div>${new Date(alarm.timestamp).toLocaleTimeString('zh-TW')}</div>
+            </div>
 
-            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+            <button class="delete-btn" onclick="removeAlarm('${alarm.id}')">
+                刪除
+            </button>
+        `;
 
-            document.getElementById('mode-exact').classList.remove('active'); document.getElementById('mode-remain').classList.remove('active');
+        container.appendChild(div);
 
-            document.getElementById(`mode-${mode}`).classList.add('active');
+    });
 
-        }
+}
 
+/* Log */
 
+function pushLogToCloud(message,type){
 
-        // 🎯 測試按鈕功能：僅留在本地，不丟上雲端
+    push(logsRef,{
+        message,
+        type,
+        timeStr:new Date().toLocaleTimeString('zh-TW')
+    });
 
-        function testVoiceAndNotification() {
+}
 
-            initAudio(); playAlertSound("測試成功！");
+function renderLogToScreen(message,type,timeStr){
 
-            sendDesktopNotification("🍄 測試通知", "這是一則來自蘑菇鬧鐘的桌面通知測試！");
+    const container = document.getElementById('logContainer');
 
-            setTimeout(() => playSingleDing(), 2000); setTimeout(() => playTripleDing(), 3500);
+    const logItem = document.createElement('div');
 
-            
+    logItem.className = `log-item log-${type}`;
 
-            // 使用本地渲染，不發送雲端
+    const timeSpan = document.createElement('span');
 
-            renderLogToScreen("执行了语音、音效与桌面通知测试 (僅限本地預覽)", "create", getNowTimeStr());
+    timeSpan.className = 'log-time';
 
-        }
+    timeSpan.textContent = timeStr;
 
+    const msgSpan = document.createElement('span');
 
+    msgSpan.textContent = message;
 
-        // --- 設定鬧鐘：同步上傳鬧鐘資料與「設定紀錄」到雲端 ---
+    logItem.appendChild(timeSpan);
 
-        function addAlarms() {
+    logItem.appendChild(msgSpan);
 
-            initAudio(); 
+    container.prepend(logItem);
 
-            const locInput = document.getElementById('location').value.trim();
+}
 
-            if (!locInput) return showModal("請填寫地點！");
+function clearLogsBtn(){
 
+    document.getElementById('logContainer').innerHTML='';
 
+}
 
-            const mode = document.querySelector('input[name="inputMode"]:checked').value;
+/* Misc */
 
-            let timeExact = 0; const now = new Date();
+function removeAlarm(id){
 
+    remove(ref(db,'alarms/' + id));
 
+}
 
-            if (mode === 'exact') {
+function toggleInputMode(){
 
-                const timeInput = document.getElementById('destroyTime').value;
+    const mode = document.querySelector('input[name="inputMode"]:checked').value;
 
-                if (!timeInput) return showModal("請填寫時間！");
+    document.getElementById('mode-exact').classList.remove('active');
 
-                const [hours, minutes] = timeInput.split(':').map(Number);
+    document.getElementById('mode-remain').classList.remove('active');
 
-                let destroyDate = new Date(); destroyDate.setHours(hours, minutes, 0, 0);
+    document.getElementById(`mode-${mode}`).classList.add('active');
 
-                if (destroyDate <= now) destroyDate.setDate(destroyDate.getDate() + 1);
+}
 
-                timeExact = destroyDate.getTime();
+function playAlertSound(text){
 
-            } else {
+    if('speechSynthesis' in window){
 
-                const h = parseInt(document.getElementById('remainH').value) || 0;
+        window.speechSynthesis.cancel();
 
-                const m = parseInt(document.getElementById('remainM').value) || 0;
+        const utterance = new SpeechSynthesisUtterance(text);
 
-                const s = parseInt(document.getElementById('remainS').value) || 0;
+        utterance.lang='zh-TW';
 
-                if (h === 0 && m === 0 && s === 0) return showModal("請填寫倒數時間！");
+        speechSynthesis.speak(utterance);
 
-                timeExact = now.getTime() + (h * 3600000) + (m * 60000) + (s * 1000);
+    }
 
-            }
+}
 
+function testVoiceAndNotification(){
 
+    playAlertSound("測試成功");
 
-            const timePlus4Min = timeExact + (4 * 60 * 1000);                            
+    sendDesktopNotification("🍄 測試通知","通知正常");
 
-            const timePlus4M30S = timeExact + ((4 * 60) + 30) * 1000;                    
+    playSingleDing();
 
-            const timePlus4M50S = timeExact + ((4 * 60) + 50) * 1000;        
+}
 
-            
+function showModal(msg){
 
-            // 1. 同步鬧鐘到雲端
+    document.getElementById('modalMessage').textContent = msg;
 
-            push(alarmsRef, { location: locInput, timestamp: timeExact, type: "exact" });
+    document.getElementById('customModal').style.display='flex';
 
-            push(alarmsRef, { location: locInput, timestamp: timePlus4Min, type: "delayed" });
+}
 
-            push(alarmsRef, { location: locInput, timestamp: timePlus4M30S, type: "ding1" });
+function closeModal(){
 
-            push(alarmsRef, { location: locInput, timestamp: timePlus4M50S, type: "ding2" });
+    document.getElementById('customModal').style.display='none';
 
+}
 
+function setNowTime(){
 
-            // 2. 🎯 【紀錄同步點 1】設定鬧鐘紀錄同步推上雲端
+    const now = new Date();
 
-            const destroyTimeStr = new Date(timeExact).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('destroyTime').value =
+        `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-            pushLogToCloud(`向雲端發送了 <b>${locInput}</b> 的鬧鐘 (預計於 ${destroyTimeStr} 摧毀)`, 'create');
+}
 
+/* SW */
 
+if('serviceWorker' in navigator){
 
-            playAlertSound(`已為 ${locInput} 設定鬧鐘`);
+    window.addEventListener('load', () => {
 
-            document.getElementById('location').value = '';                        
+        navigator.serviceWorker.register('./sw.js');
 
-            
+    });
 
-            if(mode === 'exact') setNowTime();
+}
 
-            else { document.getElementById('remainH').value = ''; document.getElementById('remainM').value = ''; document.getElementById('remainS').value = ''; }
+/* Init */
 
-        }
+initQuickTags();
 
+setNowTime();
 
+checkNotificationStatus();
 
-        // --- 設定本地的計時器 ---
-
-        function setupLocalAlarm(id, location, timestamp, type) {
-
-            const delay = timestamp - Date.now();
-
-            if (delay < 0) return; 
-
-            
-
-            const timeoutId = setTimeout(() => triggerAlarm(location, type, id), delay);
-
-            activeAlarms.push({ id, location, timestamp, type, timeoutId });
-
-            activeAlarms.sort((a, b) => a.timestamp - b.timestamp);
-
-            renderAlarms();
-
-        }
-
-
-
-        // --- 鬧鐘時間到：同步上傳「觸發紀錄」到雲端 ---
-
-        function triggerAlarm(location, type, id) {
-
-            let message = ""; let logMsg = "";                        
-
-            
-
-            if (type === "exact") {
-
-                message = `【${location}】已摧毀！`; logMsg = `【${location}】已摧毀`;
-
-                playAlertSound(message); showModal(message); sendDesktopNotification("🍄 已摧毀！", message);
-
-                // 🎯 【紀錄同步點 2】已摧毀紀錄同步推上雲端
-
-                pushLogToCloud(logMsg, 'trigger');
-
-
-
-            } else if (type === "delayed") {
-
-                message = `${location}1分鐘！`; logMsg = `【${location}】1分鐘`;
-
-                playAlertSound(message); showModal(message); sendDesktopNotification("⏳ 蘑菇即將冒出", message); 
-
-                // 🎯 【紀錄同步點 3】1分鐘紀錄同步推上雲端
-
-                pushLogToCloud(logMsg, 'trigger');
-
-
-
-            } else if (type === "ding1") {
-
-                playSingleDing(); logMsg = `【${location}】倒數30秒`; 
-
-                // 🎯 【紀錄同步點 4】倒數30秒紀錄同步推上雲端
-
-                pushLogToCloud(logMsg, 'ding');
-
-
-
-            } else if (type === "ding2") {
-
-                playTripleDing(); logMsg = `【${location}】倒數10秒`; 
-
-                // 🎯 【紀錄同步點 5】倒數10秒紀錄同步推上雲端
-
-                pushLogToCloud(logMsg, 'ding');            
-
-            }
-
-            
-
-            // 觸發後，從 Firebase 中移除鬧鐘資料
-
-            remove(ref(db, 'alarms/' + id));
-
-        }
-
-
-
-        // --- 手動刪除鬧鐘 ---
-
-        function removeAlarm(id, isManual = true) {
-
-            if (isManual) {
-
-                const alarm = activeAlarms.find(a => a.id === id);
-
-                if (alarm) {
-
-                    let typeText = "";
-
-                    if (alarm.type === "exact") typeText = "已摧毀"; else if (alarm.type === "delayed") typeText = "1分鐘"; else if (alarm.type === "ding1") typeText = "倒數30秒"; else if (alarm.type === "ding2") typeText = "倒數10秒";
-
-                    // 手動刪除也同步推上雲端，告知其他夥伴
-
-                    pushLogToCloud(`從雲端刪除了 <b>${alarm.location}</b> (${typeText})`, 'delete');
-
-                }
-
-            }
-
-            remove(ref(db, 'alarms/' + id));
-
-        }
-
-
-
-        function renderAlarms() {
-
-            const container = document.getElementById('alarmsContainer');
-
-            container.innerHTML = '';
-
-            if (activeAlarms.length === 0) return container.innerHTML = '<p style="color: #999; text-align: center; font-size: 14px;">目前沒有雲端鬧鐘</p>';
-
-
-
-            activeAlarms.forEach(alarm => {
-
-                const timeString = new Date(alarm.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-                let typeText = ""; let itemClass = "alarm-item";
-
-                if (alarm.type === "exact") { typeText = "已摧毀"; } else if (alarm.type === "delayed") { typeText = "1分鐘"; itemClass += " delayed"; } else if (alarm.type === "ding1") { typeText = "倒數30秒"; itemClass += " ding1"; } else if (alarm.type === "ding2") { typeText = "倒數10秒"; itemClass += " ding2"; }
-
-
-
-                const div = document.createElement('div');
-
-                div.className = itemClass;
-
-                div.innerHTML = `
-
-                    <div class="alarm-info"><strong>${alarm.location}</strong><span>${timeString} (${typeText})</span></div>
-
-                    <button class="delete-btn" onclick="removeAlarm('${alarm.id}', true)">刪除</button>
-
-                `;
-
-                container.appendChild(div);
-
-            });
-
-        }
-
-
-
-        function playAlertSound(textToSpeak) {
-
-            if ('speechSynthesis' in window) {
-
-                window.speechSynthesis.cancel();
-
-                const utterance = new SpeechSynthesisUtterance(textToSpeak);
-
-                utterance.lang = 'zh-TW'; 
-
-                const voices = window.speechSynthesis.getVoices();
-
-                if(voices.length > 0) utterance.voice = voices.find(voice => voice.lang.includes('zh-TW')) || voices[0];
-
-                window.speechSynthesis.speak(utterance);
-
-            }
-
-        }
-
-        if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-
-        function showModal(msg) { document.getElementById('modalMessage').innerText = msg; document.getElementById('customModal').style.display = 'flex'; }
-
-        function closeModal() { document.getElementById('customModal').style.display = 'none'; if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }
-
-        function setNowTime() { const now = new Date(); document.getElementById('destroyTime').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`; }
-
-
-
-        if ('serviceWorker' in navigator) {
-
-            window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW 註冊失敗', err)));
-
-        }
-
-
-
-        // 初始化
-
-        initQuickTags(); 
-
-        setNowTime();
-
-        checkNotificationStatus(); 
-
-    </script>
+</script>
 
 </body>
-
-</html> 
+</html>
