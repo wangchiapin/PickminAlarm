@@ -318,6 +318,8 @@ button:hover{
     border-top:8px solid var(--pikmin-red);
 }
 
+.setting-group { margin: 15px 0; font-size: 14px; }
+    
 </style>
 </head>
 
@@ -393,7 +395,14 @@ button:hover{
 </div>
 
 </div>
-
+    
+<div class="setting-group">
+    <label class="switch">
+        <input type="checkbox" id="notiToggle" checked>
+        啟用 LINE 通知
+    </label>
+</div>
+ 
 <button onclick="addAlarms()">🚀 設定鬧鐘</button>
 
 <button class="test-btn" onclick="testVoiceAndNotification()">
