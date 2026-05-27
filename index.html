@@ -126,21 +126,26 @@ input:focus{
     outline:none;
 }
 
-.quick-tags{
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-top:10px;
+.quick-tags {
+    display: grid;
+    /* 這裡使用 minmax，意思是：格子最小 60px，空間夠的話就自動補滿一行 */
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); 
+    gap: 6px;
+    margin-top: 10px;
 }
 
-.tag-btn{
-    background:#f0f9ff;
-    color:var(--pikmin-blue);
-    border:1px solid #bae6fd;
-    padding:6px 12px;
-    border-radius:15px;
-    cursor:pointer;
-    font-size:13px;
+.tag-btn {
+    background: #f0f9ff;
+    color: var(--pikmin-blue);
+    border: 1px solid #bae6fd;
+    padding: 8px 4px; /* 調整內距 */
+    border-radius: 8px; /* 把圓角改小，變方格 */
+    cursor: pointer;
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap; /* 防止文字換行 */
+    overflow: hidden;    /* 超出隱藏 */
+    text-overflow: ellipsis; /* 文字過長顯示... */
 }
 
 .tag-btn:hover{
