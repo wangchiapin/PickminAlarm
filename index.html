@@ -6,7 +6,6 @@
 
 <title>🍄 皮克敏蘑菇討伐鬧鐘</title>
 
-<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ED1C24">
 
 <style>
@@ -587,7 +586,7 @@ function sendDesktopNotification(title,message){
 
 function triggerLineNotification(location,type,destroyTime=''){
 
-    fetch(WEB_APP_URL, {
+    fetch(https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec, {
 
         method:'POST',
 
@@ -1044,7 +1043,6 @@ if('serviceWorker' in navigator){
 
     window.addEventListener('load', () => {
 
-        navigator.serviceWorker.register('./sw.js');
 
     });
 
