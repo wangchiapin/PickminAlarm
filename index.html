@@ -127,10 +127,10 @@ input:focus{
 }
 
 .quick-tags {
-    display: grid;
-    /* 這裡使用 minmax，意思是：格子最小 60px，空間夠的話就自動補滿一行 */
-    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); 
-    gap: 6px;
+    display: flex;        /* 使用 Flex 佈局 */
+    flex-wrap: wrap;      /* 允許換行 */
+    justify-content: flex-start; /* 從左邊開始排列 */
+    gap: 8px;             /* 按鈕之間的間距 */
     margin-top: 10px;
 }
 
@@ -138,14 +138,11 @@ input:focus{
     background: #f0f9ff;
     color: var(--pikmin-blue);
     border: 1px solid #bae6fd;
-    padding: 8px 4px; /* 調整內距 */
-    border-radius: 8px; /* 把圓角改小，變方格 */
+    padding: 8px 12px;    /* 稍微寬一點的左右內距，讓按鈕看起來更圓潤 */
+    border-radius: 20px;  /* 保持圓角，看起來更像標籤 */
     cursor: pointer;
-    font-size: 12px;
-    text-align: center;
-    white-space: nowrap; /* 防止文字換行 */
-    overflow: hidden;    /* 超出隱藏 */
-    text-overflow: ellipsis; /* 文字過長顯示... */
+    font-size: 13px;
+    flex: 0 0 auto;       /* 這行是關鍵：讓按鈕維持原本寬度，不會被強迫拉伸 */
 }
 
 .tag-btn:hover{
