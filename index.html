@@ -584,31 +584,24 @@ function sendDesktopNotification(title,message){
 
 /* LINE */
 
-function triggerLineNotification(location,type,destroyTime=''){
-
-    fetch(WEB_APP_URL, {
-
-        method:'POST',
-
-        headers:{
-            'Content-Type':'application/json'
-        },
-
-        keepalive:true,
-
-        body:JSON.stringify({
-            apiKey:API_KEY,
-            action:"sendNotification",
-            location,
-            type,
-            destroyTime
-        })
-
-    })
-    .then(res => res.text())
-    .then(data => console.log(data))
-    .catch(err => console.error(err));
-
+async function triggerLineNotification(location, type, destroyTime = '') {
+    try {
+        await fetch("https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec", {
+            method: 'POST',
+            mode: 'no-cors', // 關鍵：加上這一行，繞過 CORS 預檢
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                apiKey: "MySecret12345", 
+                action: "sendNotification", 
+                location, 
+                type, 
+                destroyTime 
+            })
+        });
+        console.log("LINE 通知請求已發出 (Fire and forget)");
+    } catch (e) { 
+        console.error("LINE 通知發生錯誤:", e); 
+    }
 }
 
 /* Quick tag */
