@@ -563,6 +563,13 @@ onChildAdded(logsRef, (snapshot) => {
 
 });
 
+const notiToggle = document.getElementById('notiToggle');
+if (notiToggle) {
+    notiToggle.addEventListener('change', function() {
+        const isEnabled = this.checked;
+        firebase.database().ref('settings/notificationEnabled').set(isEnabled);
+    });
+}
 /* Notification */
 
 function requestNotificationPermission(){
