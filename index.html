@@ -204,6 +204,21 @@
             });
         }
 
+        // 在 <script> 區塊內加入此函式
+async function triggerLineNotification(location, type, destroyTime) {
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec'; // 這裡貼上你部署後的網址
+    await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            apiKey: "MySecret12345", // 你的 API KEY
+            location: location,
+            type: type,
+            destroyTime: destroyTime
+        })
+    });
+}
+        
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -295,6 +310,8 @@
             const timePlus4Min = timeExact + (4 * 60 * 1000);                            
             const timePlus4M30S = timeExact + ((4 * 60) + 30) * 1000;                    
             const timePlus4M50S = timeExact + ((4 * 60) + 50) * 1000;        
+            const destroyTimeStr = new Date(timeExact).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            triggerLineNotification(locInput, "confirmed", destroyTimeStr);
             
             // 1. 同步鬧鐘到雲端
             push(alarmsRef, { location: locInput, timestamp: timeExact, type: "exact" });
@@ -325,35 +342,47 @@
         }
 
         // --- 鬧鐘時間到：同步上傳「觸發紀錄」到雲端 ---
-        function triggerAlarm(location, type, id) {
-            let message = ""; let logMsg = "";                        
-            
-            if (type === "exact") {
-                message = `【${location}】已摧毀！`; logMsg = `【${location}】已摧毀`;
-                playAlertSound(message); showModal(message); sendDesktopNotification("🍄 已摧毀！", message);
-                // 🎯 【紀錄同步點 2】已摧毀紀錄同步推上雲端
-                pushLogToCloud(logMsg, 'trigger');
+       function triggerAlarm(location, type, id) {
+    let message = ""; 
+    let logMsg = "";
+    
+    // --- 新增：取得時間字串供通知使用 ---
+    const currentTimeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
 
-            } else if (type === "delayed") {
-                message = `${location}1分鐘！`; logMsg = `【${location}】1分鐘`;
-                playAlertSound(message); showModal(message); sendDesktopNotification("⏳ 蘑菇即將冒出", message); 
-                // 🎯 【紀錄同步點 3】1分鐘紀錄同步推上雲端
-                pushLogToCloud(logMsg, 'trigger');
+    if (type === "exact") {
+        message = `【${location}】已摧毀！`;
+        logMsg = `【${location}】已摧毀`;
+        
+        // 【新增呼叫】即時通知 LINE
+        triggerLineNotification(location, "destroyed", currentTimeStr);
+        
+        playAlertSound(message); showModal(message); sendDesktopNotification("🍄 已摧毀！", message);
+        pushLogToCloud(logMsg, 'trigger');
 
-            } else if (type === "ding1") {
-                playSingleDing(); logMsg = `【${location}】倒數30秒`; 
-                // 🎯 【紀錄同步點 4】倒數30秒紀錄同步推上雲端
-                pushLogToCloud(logMsg, 'ding');
+    } else if (type === "delayed") {
+        message = `${location} 1分鐘後生成！`;
+        logMsg = `【${location}】1分鐘`;
+        
+        // 【新增呼叫】即時通知 LINE
+        triggerLineNotification(location, "warning", currentTimeStr);
+        
+        playAlertSound(message); showModal(message); sendDesktopNotification("⏳ 蘑菇即將冒出", message);
+        pushLogToCloud(logMsg, 'trigger');
 
-            } else if (type === "ding2") {
-                playTripleDing(); logMsg = `【${location}】倒數10秒`; 
-                // 🎯 【紀錄同步點 5】倒數10秒紀錄同步推上雲端
-                pushLogToCloud(logMsg, 'ding');            
-            }
-            
-            // 觸發後，從 Firebase 中移除鬧鐘資料
-            remove(ref(db, 'alarms/' + id));
-        }
+    } else if (type === "ding1") {
+        playSingleDing();
+        logMsg = `【${location}】倒數30秒`;
+        pushLogToCloud(logMsg, 'ding');
+
+    } else if (type === "ding2") {
+        playTripleDing();
+        logMsg = `【${location}】倒數10秒`;
+        // 【新增呼叫】這裡我們也可以加個確認訊息：如果在設鬧鐘時沒觸發，這裡補發
+        pushLogToCloud(logMsg, 'ding');
+    }
+    
+    remove(ref(db, 'alarms/' + id));
+}
 
         // --- 手動刪除鬧鐘 ---
         function removeAlarm(id, isManual = true) {
