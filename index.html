@@ -472,11 +472,28 @@ let audioCtx = null;
 /* Quick tags */
 
 const quickLocations = [
-    "聖宮廟",
-    "長老教會",
+    "聖公廟",
+    "基督教長老教會",
     "三官大帝",
     "蓮潭",
-    "孔子廟"
+    "三山宮",
+    "禮拜堂",
+    "乾天羅",
+    "金爐",
+    "元帝廟步道",
+    "南天宮",
+    "大蓮莊",
+    "孔子廟",
+    "進擊的紅貓",
+    "少數民族",
+    "菱形噴水池",
+    "泰山石敢當",
+    "南門意象",
+    "船錨",
+    "和服小白",
+    "酸菜白肉鍋",
+    "西門遺址",
+    "美術海"
 ];
 
 /* Window binding */
@@ -652,6 +669,11 @@ function playTone(freq,start,duration){
 
     osc.frequency.value = freq;
 
+    // --- 在這裡調整音量 ---
+    // 數值範圍是 0 到 1，0.2 代表 20% 的音量，聽起來會溫和很多
+    gain.gain.value = 0.5; 
+    // --------------------
+    
     osc.connect(gain);
 
     gain.connect(audioCtx.destination);
@@ -664,17 +686,17 @@ function playTone(freq,start,duration){
 
 function playSingleDing(){
 
-    playTone(880,0,0.5);
+    playTone(700,0,0.5);
 
 }
 
 function playTripleDing(){
 
-    playTone(1046,0,0.15);
+    playTone(700,0,0.15);
 
-    playTone(1046,0.2,0.15);
+    playTone(700,0.2,0.15);
 
-    playTone(1046,0.4,0.15);
+    playTone(700,0.4,0.15);
 
 }
 
@@ -900,16 +922,22 @@ function renderAlarms(){
 
         div.className = 'alarm-item';
 
-        div.innerHTML = `
-            <div>
-                <strong>${alarm.location}</strong>
-                <div>${new Date(alarm.timestamp).toLocaleTimeString('zh-TW')}</div>
-            </div>
+       div.innerHTML = `
+    <div>
+        <strong>${alarm.location}</strong>
+        <div>${new Date(alarm.timestamp).toLocaleTimeString('zh-TW')}</div>
+        <div style="font-size:12px; color:#888;">
+            ${alarm.type === 'exact' ? '✅ 摧毀' : 
+              alarm.type === 'delayed' ? '⚠️ 倒數1分鐘' : 
+              alarm.type === 'ding1' ? '🔔 倒數30秒' : 
+              alarm.type === 'ding2' ? '🔔 倒數10秒' : ''}
+        </div>
+    </div>
 
-            <button class="delete-btn" onclick="removeAlarm('${alarm.id}')">
-                刪除
-            </button>
-        `;
+    <button class="delete-btn" onclick="removeAlarm('${alarm.id}')">
+        刪除
+    </button>
+`;
 
         container.appendChild(div);
 
