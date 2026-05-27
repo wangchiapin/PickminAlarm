@@ -459,7 +459,7 @@ const logsRef = ref(db, 'logs');
 
 /* Apps Script */
 
-const WEB_APP_URL = "https://script.google.com/macros/library/d/1vTr6Kw-JNysfcqtS8NN2osQfl8y8NzvVuGjyYZIIkr1f3hRBBYXbwaE4/1";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec";
 
 const API_KEY = "MySecret12345";
 
@@ -586,7 +586,7 @@ function sendDesktopNotification(title,message){
 
 function triggerLineNotification(location,type,destroyTime=''){
 
-    fetch(https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec, {
+    fetch(WEB_APP_URL, {
 
         method:'POST',
 
