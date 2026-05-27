@@ -3,15 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍄 皮克敏蘑菇討伐鬧鐘 (即時通知優化版)</title>
+    <title>🍄 皮克敏蘑菇討伐鬧鐘 (雲端連線+紀錄同步版)</title>
     <style>
         :root { --pikmin-green: #8DC63F; --pikmin-blue: #00AEEF; --pikmin-red: #ED1C24; --pikmin-yellow: #FFF200; --bg-color: #F7F9F4; --card-bg: #FFFFFF; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; }
-        .layout-wrapper { display: flex; flex-direction: row; gap: 20px; width: 100%; max-width: 900px; justify-content: center; }
-        .log-panel { background-color: var(--card-bg); padding: 20px; border-radius: 20px; width: 320px; height: 80vh; overflow-y: auto; }
-        .container { background-color: var(--card-bg); padding: 30px; border-radius: 20px; width: 400px; }
-        button { width: 100%; padding: 12px; background-color: var(--pikmin-green); color: white; border: none; border-radius: 8px; cursor: pointer; }
-        .alarm-item { margin-bottom: 10px; padding: 10px; border-left: 5px solid #ccc; background: #fdfdfd; display: flex; justify-content: space-between; align-items: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: #333; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .layout-wrapper { display: flex; flex-direction: row; gap: 20px; width: 100%; max-width: 900px; justify-content: center; align-items: flex-start; }
+        .log-panel { background-color: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); width: 100%; max-width: 320px; border-top: 8px solid var(--pikmin-yellow); height: calc(100vh - 80px); position: sticky; top: 20px; display: flex; flex-direction: column; }
+        .container { background-color: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border-top: 8px solid var(--pikmin-red); }
+        h1, h2 { text-align: center; color: var(--pikmin-green); margin-top: 0; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        input[type="text"], input[type="time"], input[type="number"] { width: 100%; padding: 10px; border: 2px solid #E0E0E0; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: var(--pikmin-green); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .alarm-item { background-color: #FDFDFD; border: 1px solid #EEE; border-left: 5px solid var(--pikmin-blue); padding: 10px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .delete-btn { background-color: #FF5252; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
+        #logContainer { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .log-item { font-size: 13px; padding: 8px; border-radius: 6px; background: #f9f9f9; border-left: 4px solid #ccc; }
     </style>
 </head>
 <body>
@@ -22,9 +28,9 @@
         </div>
         <div class="container">
             <h1>🍄 蘑菇討伐鬧鐘</h1>
-            <input type="text" id="location" placeholder="地點">
+            <input type="text" id="location" placeholder="📍 蘑菇地點">
             <input type="time" id="destroyTime">
-            <button onclick="addAlarms()">🚀 設定鬧鐘</button>
+            <button onclick="addAlarms()">🚀 設定鬧鐘 (即時同步)</button>
             <div id="alarmsContainer"></div>
         </div>
     </div>
@@ -38,77 +44,66 @@
             databaseURL: "https://pickminalarm-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "pickminalarm"
         };
-
         const db = getDatabase(initializeApp(firebaseConfig));
         const alarmsRef = ref(db, 'alarms');
-        const logsRef = ref(db, 'logs');
-        let activeAlarms = [];
 
-        window.addAlarms = addAlarms;
-        window.removeAlarm = removeAlarm;
-
-        // 核心修正：將觸發邏輯改寫，確保只刪除自己，不刪別人的
-        function triggerAlarm(location, type, id) {
-            const currentTimeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-            
-            if (type === "exact") {
-                triggerLineNotification(location, "destroyed", currentTimeStr);
-                alert(`【${location}】已摧毀！`);
-            } else if (type === "delayed") {
-                triggerLineNotification(location, "warning", currentTimeStr);
-            }
-
-            // 修正點：確定 id 是正確的單筆 ID，只刪除觸發的那一筆資料
-            console.log(`觸發事件: ${type}, 正在移除 ID: ${id}`);
-            remove(ref(db, 'alarms/' + id));
-        }
-
+        // --- 核心：即時 LINE 通知函式 ---
         async function triggerLineNotification(location, type, destroyTime) {
             try {
-                await fetch('https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec', {
+                await fetch('https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec', { // 記得填入你部署好的網址
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        apiKey: "MySecret12345",
+                        apiKey: "MySecret12345", 
                         location: location,
                         type: type,
                         destroyTime: destroyTime
                     })
                 });
-            } catch (e) { console.error("LINE 通知失敗:", e); }
+            } catch (e) { console.error(e); }
         }
 
-        function addAlarms() {
-            const locInput = document.getElementById('location').value.trim();
+        // --- 設定鬧鐘 ---
+        window.addAlarms = function() {
+            const loc = document.getElementById('location').value;
             const timeInput = document.getElementById('destroyTime').value;
-            if (!locInput || !timeInput) return alert("請填寫完整");
+            if (!loc || !timeInput) return alert("請填寫完整");
+            
+            const [h, m] = timeInput.split(':');
+            let date = new Date(); date.setHours(h, m, 0, 0);
+            const T = date.getTime();
 
-            const [hours, minutes] = timeInput.split(':').map(Number);
-            let destroyDate = new Date();
-            destroyDate.setHours(hours, minutes, 0, 0);
-            const timeExact = destroyDate.getTime();
-
-            // 設定四個不同階段的資料 (每個 push 產生一個獨立 ID)
-            push(alarmsRef, { location: locInput, timestamp: timeExact, type: "exact" });
-            push(alarmsRef, { location: locInput, timestamp: timeExact + 240000, type: "delayed" });
-            push(alarmsRef, { location: locInput, timestamp: timeExact + 270000, type: "ding1" });
-            push(alarmsRef, { location: locInput, timestamp: timeExact + 290000, type: "ding2" });
-
-            triggerLineNotification(locInput, "confirmed", timeInput);
+            push(alarmsRef, { location: loc, timestamp: T, type: "exact" });
+            push(alarmsRef, { location: loc, timestamp: T + 240000, type: "delayed" });
+            
+            triggerLineNotification(loc, "confirmed", timeInput);
             alert("鬧鐘已設定！");
+        };
+
+        // --- 觸發鬧鐘 (修正版：精確刪除單一 ID) ---
+        function triggerAlarm(location, type, id) {
+            const timeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            
+            if (type === "exact") {
+                triggerLineNotification(location, "destroyed", timeStr);
+                alert(`【${location}】已摧毀！`);
+            } else if (type === "delayed") {
+                triggerLineNotification(location, "warning", timeStr);
+            }
+
+            // 只刪除當下觸發的這筆 ID，不影響其他鬧鐘
+            remove(ref(db, 'alarms/' + id));
         }
 
-        // 其他基礎函式 (setupLocalAlarm, renderAlarms...) 請維持你原本的樣子即可
-        // 確保 setupLocalAlarm 傳入的 id 是 push 產生的那個唯一 ID
+        // 監聽器設定
         onChildAdded(alarmsRef, (snapshot) => {
             const id = snapshot.key;
             const data = snapshot.val();
             const delay = data.timestamp - Date.now();
-            if (delay > 0) {
-                const timeoutId = setTimeout(() => triggerAlarm(data.location, data.type, id), delay);
-                activeAlarms.push({ id, ...data, timeoutId });
-            }
+            if (delay > 0) setTimeout(() => triggerAlarm(data.location, data.type, id), delay);
         });
+
+        // 刪除按鈕
+        window.removeAlarm = (id) => remove(ref(db, 'alarms/' + id));
     </script>
 </body>
 </html>
