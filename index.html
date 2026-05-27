@@ -408,24 +408,7 @@
 
         }
 
-// 📍 新增：即時 LINE 通知中繼站
-async function triggerLineNotification(location, type, destroyTime) {
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec'; // 填入你部署好的 Web App 網址
-    try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                apiKey: "MySecret12345", // 務必確認與 Apps Script 指令碼屬性一致
-                location: location,
-                type: type,
-                destroyTime: destroyTime
-            })
-        });
-    } catch (e) {
-        console.error("LINE 即時通知發送失敗:", e);
-    }
-}
+
 
         function initAudio() {
 
@@ -621,8 +604,7 @@ async function triggerLineNotification(location, type, destroyTime) {
 
             push(alarmsRef, { location: locInput, timestamp: timePlus4M50S, type: "ding2" });
 
-const destroyTimeStr = new Date(timeExact).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-triggerLineNotification(locInput, "confirmed", destroyTimeStr);
+
 
             // 2. 🎯 【紀錄同步點 1】設定鬧鐘紀錄同步推上雲端
 
@@ -668,52 +650,66 @@ triggerLineNotification(locInput, "confirmed", destroyTimeStr);
 
 
 
-        // --- 鬧鐘時間到：同步上傳「觸發紀錄」到雲端，並發送 LINE 通知 ---
-function triggerAlarm(location, type, id) {
-    let message = ""; 
-    let logMsg = "";
-    
-    // 取得當前時間字串，用於通知訊息
-    const currentTimeStr = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        // --- 鬧鐘時間到：同步上傳「觸發紀錄」到雲端 ---
 
-    if (type === "exact") {
-        message = `【${location}】已摧毀！`;
-        logMsg = `【${location}】已摧毀`;
-        
-        // 🚀 觸發 LINE 即時通知 (摧毀)
-        triggerLineNotification(location, "destroyed", currentTimeStr);
-        
-        playAlertSound(message); 
-        showModal(message); 
-        sendDesktopNotification("🍄 已摧毀！", message);
-        pushLogToCloud(logMsg, 'trigger');
+        function triggerAlarm(location, type, id) {
 
-    } else if (type === "delayed") {
-        message = `${location} 1分鐘後生成！`;
-        logMsg = `【${location}】1分鐘`;
-        
-        // 🚀 觸發 LINE 即時通知 (生成前1分鐘提醒)
-        triggerLineNotification(location, "warning", currentTimeStr);
-        
-        playAlertSound(message); 
-        showModal(message); 
-        sendDesktopNotification("⏳ 蘑菇即將冒出", message);
-        pushLogToCloud(logMsg, 'trigger');
+            let message = ""; let logMsg = "";                        
 
-    } else if (type === "ding1") {
-        playSingleDing(); 
-        logMsg = `【${location}】倒數30秒`; 
-        pushLogToCloud(logMsg, 'ding');
+            
 
-    } else if (type === "ding2") {
-        playTripleDing(); 
-        logMsg = `【${location}】倒數10秒`; 
-        pushLogToCloud(logMsg, 'ding');
-    }
-    
-    // 觸發後，精確從 Firebase 中移除該筆鬧鐘資料
-    remove(ref(db, 'alarms/' + id));
-}
+            if (type === "exact") {
+
+                message = `【${location}】已摧毀！`; logMsg = `【${location}】已摧毀`;
+
+                playAlertSound(message); showModal(message); sendDesktopNotification("🍄 已摧毀！", message);
+
+                // 🎯 【紀錄同步點 2】已摧毀紀錄同步推上雲端
+
+                pushLogToCloud(logMsg, 'trigger');
+
+
+
+            } else if (type === "delayed") {
+
+                message = `${location}1分鐘！`; logMsg = `【${location}】1分鐘`;
+
+                playAlertSound(message); showModal(message); sendDesktopNotification("⏳ 蘑菇即將冒出", message); 
+
+                // 🎯 【紀錄同步點 3】1分鐘紀錄同步推上雲端
+
+                pushLogToCloud(logMsg, 'trigger');
+
+
+
+            } else if (type === "ding1") {
+
+                playSingleDing(); logMsg = `【${location}】倒數30秒`; 
+
+                // 🎯 【紀錄同步點 4】倒數30秒紀錄同步推上雲端
+
+                pushLogToCloud(logMsg, 'ding');
+
+
+
+            } else if (type === "ding2") {
+
+                playTripleDing(); logMsg = `【${location}】倒數10秒`; 
+
+                // 🎯 【紀錄同步點 5】倒數10秒紀錄同步推上雲端
+
+                pushLogToCloud(logMsg, 'ding');            
+
+            }
+
+            
+
+            // 觸發後，從 Firebase 中移除鬧鐘資料
+
+            remove(ref(db, 'alarms/' + id));
+
+        }
+
 
 
         // --- 手動刪除鬧鐘 ---
@@ -835,4 +831,3 @@ function triggerAlarm(location, type, id) {
 </body>
 
 </html> 
-
