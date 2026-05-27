@@ -127,22 +127,24 @@ input:focus{
 }
 
 .quick-tags {
-    display: flex;
-    flex-wrap: wrap;      /* 讓按鈕自動換行 */
-    gap: 8px;             /* 按鈕之間的空隙，你可以改 6px 讓它更擠一點 */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 這裡設定一行顯示 3 個方格 */
+    gap: 8px;
     margin-top: 10px;
-    justify-content: flex-start; /* 全部往左靠齊 */
 }
 
 .tag-btn {
     background: #f0f9ff;
-    color: #0ea5e9;       /* 你圖片中的藍色代碼 */
+    color: var(--pikmin-blue);
     border: 1px solid #bae6fd;
-    padding: 6px 12px;    /* 上下 6px，左右 12px，這樣會比較扁平好看 */
-    border-radius: 20px;  /* 圓角設為 20px 就會呈現這種膠囊狀 */
+    padding: 8px 4px; /* 調整內距 */
+    border-radius: 14px; /* 把圓角改小，變方格 */
     cursor: pointer;
-    font-size: 14px;
-    white-space: nowrap;  /* 文字不換行 */
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap; /* 防止文字換行 */
+    overflow: hidden;    /* 超出隱藏 */
+    text-overflow: ellipsis; /* 文字過長顯示... */
 }
 
 .tag-btn:hover{
