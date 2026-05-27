@@ -127,22 +127,22 @@ input:focus{
 }
 
 .quick-tags {
-    display: flex;        /* 使用 Flex 佈局 */
-    flex-wrap: wrap;      /* 允許換行 */
-    justify-content: flex-start; /* 從左邊開始排列 */
-    gap: 8px;             /* 按鈕之間的間距 */
+    display: flex;
+    flex-wrap: wrap;      /* 讓按鈕自動換行 */
+    gap: 8px;             /* 按鈕之間的空隙，你可以改 6px 讓它更擠一點 */
     margin-top: 10px;
+    justify-content: flex-start; /* 全部往左靠齊 */
 }
 
 .tag-btn {
     background: #f0f9ff;
-    color: var(--pikmin-blue);
+    color: #0ea5e9;       /* 你圖片中的藍色代碼 */
     border: 1px solid #bae6fd;
-    padding: 8px 12px;    /* 稍微寬一點的左右內距，讓按鈕看起來更圓潤 */
-    border-radius: 20px;  /* 保持圓角，看起來更像標籤 */
+    padding: 6px 12px;    /* 上下 6px，左右 12px，這樣會比較扁平好看 */
+    border-radius: 20px;  /* 圓角設為 20px 就會呈現這種膠囊狀 */
     cursor: pointer;
-    font-size: 13px;
-    flex: 0 0 auto;       /* 這行是關鍵：讓按鈕維持原本寬度，不會被強迫拉伸 */
+    font-size: 14px;
+    white-space: nowrap;  /* 文字不換行 */
 }
 
 .tag-btn:hover{
