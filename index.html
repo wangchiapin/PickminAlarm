@@ -1009,9 +1009,17 @@ function renderLogToScreen(message,type,timeStr){
 }
 
 function clearLogsBtn(){
-
-    document.getElementById('logContainer').innerHTML='';
-
+    if(confirm("確定要刪除雲端的所有操作紀錄嗎？")) {
+        const logsRef = ref(db, 'logs');
+        remove(logsRef) // 這行會刪除 Firebase 上整個 logs 節點的資料
+            .then(() => {
+                document.getElementById('logContainer').innerHTML='';
+                console.log("雲端紀錄已清除");
+            })
+            .catch(error => {
+                console.error("刪除失敗: ", error);
+            });
+    }
 }
 
 /* Misc */
