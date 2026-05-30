@@ -559,69 +559,56 @@ function setupLocalAlarm(id,location,timestamp,type){
 /* Trigger */
 
 function triggerAlarm(location,type,id,timestamp){
-
-    if(Date.now() < timestamp - 3000){
-
+// 1. 本地防重複：如果這台裝置已經響過這個鬧鐘，就不要重複響
+    if (!window.triggeredAlarmsSet) {
+        window.triggeredAlarmsSet = new Set();
+    }
+    if (window.triggeredAlarmsSet.has(id)) {
         return;
-
+    }
+    window.triggeredAlarmsSet.add(id);
+    
+    if(Date.now() < timestamp - 3000){
+        return;
     }
 
     let message = "";
-
     if(type === "exact"){
-
         message = `【${location}】已摧毀！`;
-
         playAlertSound(message);
-
         showModal(message);
-
         sendDesktopNotification("🍄 已摧毀",message);
-
         triggerLineNotification(location,"destroyed");
-
         pushLogToCloud(message,'trigger');
-
     }
 
     else if(type === "delayed"){
-
         message = `${location} 1分鐘`;
-
         playAlertSound(message);
-
         showModal(message);
-
         sendDesktopNotification("⚠️ 1分鐘",message);
-
         triggerLineNotification(location,"warning");
-
         pushLogToCloud(message,'trigger');
-
     }
 
     else if(type === "ding1"){
-
         playSingleDing();
-
         pushLogToCloud(`${location} 倒數30秒`,'ding');
-
     }
 
     else if(type === "ding2"){
-
         playTripleDing();
-
         pushLogToCloud(`${location} 倒數10秒`,'ding');
-
     }
-
-    remove(ref(db,'alarms/' + id));
-
+    
+    // 觸發後延遲 5分鐘 自動清理 Firebase 資料
+    setTimeout(() => {
+        const alarmRef = ref(db, 'alarms/' + id);
+        remove(alarmRef).catch(e => console.error("自動清理失敗: ", e));
+    }, 300000);
+    
     activeAlarms = activeAlarms.filter(a => a.id !== id);
-
     renderAlarms();
-
 }
 
 /* Render */
