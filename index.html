@@ -90,7 +90,9 @@ button { width:100%; padding:12px; background-color:var(--pikmin-green); color:w
 
     <div class="container">
         <h1>🍄 蘑菇討伐鬧鐘</h1>
-        
+        <div id="liveClock" style="text-align: center; font-size: 1.5em; font-weight: bold; color: #555; margin-bottom: 15px;">
+        00:00:00
+        </div>
         <div class="setting-group" style="margin-bottom: 5px; text-align: center;">
             <label class="switch">
                 <input type="checkbox" id="notiToggle" checked>
@@ -782,7 +784,26 @@ initQuickTags();
 setNowTime();
 
 checkNotificationStatus();
+/* Live Clock */
+function startLiveClock() {
+    const clockElement = document.getElementById('liveClock');
+    if (!clockElement) return; // 安全防護，避免找不到元件時報錯
 
+    function updateClock() {
+        const now = new Date();
+        clockElement.textContent = now.toLocaleTimeString('zh-TW', {
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit'
+        });
+    }
+    
+    // 設定每 1 秒執行一次
+    setInterval(updateClock, 1000);
+    updateClock(); // 頁面載入時立即顯示時間
+}
+    
 </script>
 
 </body>
