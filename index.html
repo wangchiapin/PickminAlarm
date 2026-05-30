@@ -3,13 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>🍄 皮克敏蘑菇討伐鬧鐘</title>
-
 <meta name="theme-color" content="#ED1C24">
-
 <style>
-
 :root{
     --pikmin-green:#8DC63F;
     --pikmin-blue:#00AEEF;
@@ -18,308 +14,62 @@
     --bg-color:#F7F9F4;
     --card-bg:#FFFFFF;
 }
+body{ 
+    font-family:'Segoe UI',
+    sans-serif; 
+    background-color:
+    var(--bg-color); 
+    color:#333; 
+    margin:0; 
+    padding:20px; }
 
-body{
-    font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
-    background-color:var(--bg-color);
-    color:#333;
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-    min-height:100vh;
-    margin:0;
-    padding:20px;
-    box-sizing:border-box;
+
+/* 三欄式佈局 */
+.layout-wrapper {
+    display: grid;
+    grid-template-columns: 350px 1fr 450px;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: flex-start;
+}
+@media (max-width: 1024px) {
+    .layout-wrapper { grid-template-columns: 1fr; }
 }
 
-.layout-wrapper{
-    display:flex;
-    flex-direction:row;
-    gap:20px;
-    width:100%;
-    max-width:900px;
-    justify-content:center;
-    align-items:flex-start;
-}
-
-.log-panel{
+.log-panel, .container {
     background-color:var(--card-bg);
     padding:20px;
     border-radius:20px;
     box-shadow:0 8px 20px rgba(0,0,0,0.05);
-    width:100%;
-    max-width:320px;
-    border-top:8px solid var(--pikmin-yellow);
-    height:calc(100vh - 80px);
-    position:sticky;
-    top:20px;
-    display:flex;
-    flex-direction:column;
 }
+.log-panel { border-top:8px solid var(--pikmin-yellow); height:80vh; display:flex; flex-direction:column; }
+.container { border-top:8px solid var(--pikmin-red); }
 
-.container{
-    background-color:var(--card-bg);
-    padding:30px;
-    border-radius:20px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.1);
-    width:100%;
-    max-width:400px;
-    border-top:8px solid var(--pikmin-red);
-}
+h1,h2 { text-align:center; color:var(--pikmin-green); margin-top:0; }
+#logContainer, #alarmsContainer { flex-grow:1; overflow-y:auto; gap:8px; display:flex; flex-direction:column; }
 
-@media (max-width:768px){
-    .layout-wrapper{
-        flex-direction:column;
-        align-items:center;
-    }
+.form-group { margin-bottom:15px; }
+input[type="text"], input[type="time"], input[type="number"] { width:100%; padding:10px; border:2px solid #E0E0E0; border-radius:8px; box-sizing:border-box; }
+.quick-tags { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.tag-btn { background: #f0f9ff; color: var(--pikmin-blue); border: 1px solid #bae6fd; padding: 5px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+.mode-tabs { display:flex; margin-bottom:15px; background:#eee; border-radius:8px; padding:4px; }
+.mode-tabs label { flex:1; text-align:center; cursor:pointer; padding:8px 0; }
+.mode-tabs input { display:none; }
+.mode-tabs input:checked + span { background:white; color:var(--pikmin-blue); font-weight:bold; padding:8px 15px; border-radius:6px; }
+button { width:100%; padding:12px; background-color:var(--pikmin-green); color:white; border:none; border-radius:8px; cursor:pointer; margin-top:5px; font-weight:bold; }
 
-    .log-panel{
-        order:2;
-        height:400px;
-        position:static;
-        max-width:400px;
-    }
+.alarm-item { background:#FDFDFD; border:1px solid #EEE; padding:3px; margin-bottom:1px; display:flex; justify-content:space-between; align-items:center; }
 
-    .container{
-        order:1;
-    }
-}
+/* 各種類別的顏色設定 */
+.alarm-exact { border-left: 8px solid var(--pikmin-blue); }
+.alarm-delayed { border-left: 8px solid var(--pikmin-green); }
+.alarm-ding1 { border-left: 8px solid var(--pikmin-yellow); background-color: #fdfaf4; }
+.alarm-ding2 { border-left: 8px solid var(--pikmin-red); background-color: #fdf5f0; }
 
-h1,h2{
-    text-align:center;
-    color:var(--pikmin-green);
-    margin-top:0;
-    margin-bottom:20px;
-}
-
-.log-panel h2{
-    font-size:20px;
-    color:#f5b041;
-    border-bottom:2px solid #EEE;
-    padding-bottom:10px;
-}
-
-.form-group{
-    margin-bottom:15px;
-}
-
-label{
-    display:block;
-    margin-bottom:5px;
-    font-weight:bold;
-    color:#555;
-}
-
-input[type="text"],
-input[type="time"],
-input[type="number"]{
-    width:100%;
-    padding:10px;
-    border:2px solid #E0E0E0;
-    border-radius:8px;
-    font-size:16px;
-    box-sizing:border-box;
-}
-
-input:focus{
-    border-color:var(--pikmin-blue);
-    outline:none;
-}
-
-.quick-tags {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 這裡設定一行顯示 3 個方格 */
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.tag-btn {
-    background: #f0f9ff;
-    color: var(--pikmin-blue);
-    border: 1px solid #bae6fd;
-    padding: 8px 4px; /* 調整內距 */
-    border-radius: 14px; /* 把圓角改小，變方格 */
-    cursor: pointer;
-    font-size: 12px;
-    text-align: center;
-    white-space: nowrap; /* 防止文字換行 */
-    overflow: hidden;    /* 超出隱藏 */
-    text-overflow: ellipsis; /* 文字過長顯示... */
-}
-
-.tag-btn:hover{
-    background:var(--pikmin-blue);
-    color:white;
-}
-
-.mode-tabs{
-    display:flex;
-    margin-bottom:15px;
-    background:#eee;
-    border-radius:8px;
-    padding:4px;
-}
-
-.mode-tabs label{
-    flex:1;
-    text-align:center;
-    margin:0;
-    cursor:pointer;
-}
-
-.mode-tabs input{
-    display:none;
-}
-
-.mode-tabs span{
-    display:block;
-    padding:8px 0;
-    border-radius:6px;
-}
-
-.mode-tabs input:checked + span{
-    background:white;
-    color:var(--pikmin-blue);
-    font-weight:bold;
-}
-
-.countdown-group{
-    display:flex;
-    gap:10px;
-}
-
-.countdown-group input{
-    text-align:center;
-}
-
-.input-section{
-    display:none;
-}
-
-.input-section.active{
-    display:block;
-}
-
-button{
-    width:100%;
-    padding:12px;
-    background-color:var(--pikmin-green);
-    color:white;
-    border:none;
-    border-radius:8px;
-    font-size:18px;
-    font-weight:bold;
-    cursor:pointer;
-    margin-top:5px;
-}
-
-button:hover{
-    opacity:0.9;
-}
-
-.notify-btn{
-    background:var(--pikmin-blue);
-    font-size:16px;
-    margin-bottom:15px;
-}
-
-.notify-btn.granted{
-    background:#ccc;
-    cursor:not-allowed;
-}
-
-.test-btn{
-    background:#f0f0f0;
-    color:#555;
-    font-size:14px;
-    border:1px solid #ccc;
-}
-
-.alarm-list{
-    margin-top:30px;
-}
-
-.alarm-item{
-    background:#FDFDFD;
-    border:1px solid #EEE;
-    border-left:5px solid var(--pikmin-blue);
-    padding:10px 15px;
-    border-radius:6px;
-    margin-bottom:10px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size:14px;
-}
-
-.alarm-item.delayed{
-    border-left-color:var(--pikmin-yellow);
-}
-
-.alarm-item.ding1{
-    border-left-color:#f5b041;
-}
-
-.alarm-item.ding2{
-    border-left-color:#e67e22;
-}
-
-.delete-btn{
-    background:#FF5252;
-    width:auto;
-    padding:5px 10px;
-    font-size:12px;
-}
-
-#logContainer{
-    flex-grow:1;
-    overflow-y:auto;
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-}
-
-.log-item{
-    font-size:13px;
-    padding:8px;
-    border-radius:6px;
-    background:#f9f9f9;
-    border-left:4px solid #ccc;
-}
-
-.log-time{
-    color:#888;
-    font-size:11px;
-    display:block;
-    margin-bottom:2px;
-}
-
-.log-create{ border-left-color:var(--pikmin-blue); }
-.log-trigger{ border-left-color:var(--pikmin-red); }
-.log-ding{ border-left-color:#e67e22; }
-.log-delete{ border-left-color:#999; }
-
-#customModal{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.5);
-    justify-content:center;
-    align-items:center;
-    z-index:1000;
-}
-
-.modal-content{
-    background:white;
-    padding:30px;
-    border-radius:15px;
-    text-align:center;
-    max-width:300px;
-    border-top:8px solid var(--pikmin-red);
-}
-
-.setting-group { margin: 15px 0; font-size: 14px; }
-    
+.delete-btn { background:#FF5252; width:auto; padding:5px 10px; font-size:12px; }
+.input-section { display:none; }
+.input-section.active { display:block; }
 </style>
 </head>
 
@@ -327,114 +77,62 @@ button:hover{
 
 <div class="layout-wrapper">
 
-<div class="log-panel">
+    <div class="log-panel">
+        <h2>📜 操作紀錄</h2>
+        <div id="logContainer"></div>
+        <button class="test-btn" style="background:#f0f0f0; color:#555;" onclick="clearLogsBtn()">🗑️ 清空畫面紀錄</button>
+    </div>
 
-<h2>📜 操作紀錄</h2>
+    <div class="container">
+        <h2>⏳ 已設定鬧鐘</h2>
+        <div id="alarmsContainer"></div>
+    </div>
 
-<div id="logContainer">
-<div class="log-item">雲端連線中...</div>
-</div>
+    <div class="container">
+        <h1>🍄 蘑菇討伐鬧鐘</h1>
+        
+        <div class="setting-group" style="margin-bottom: 5px; text-align: center;">
+            <label class="switch">
+                <input type="checkbox" id="notiToggle" checked>
+                啟用 LINE 通知
+            </label>
+        </div>
 
-<button class="test-btn" onclick="clearLogsBtn()">🗑️ 清空畫面紀錄</button>
+        <div class="form-group">
+            <label>📍 地點：</label>
+            <input type="text" id="location" placeholder="例如：公園">
+            <div class="quick-tags" id="quickTagsContainer"></div>
+        </div>
 
-</div>
+        <div class="mode-tabs">
+            <label><input type="radio" name="inputMode" value="exact" checked onchange="toggleInputMode()"><span>🕒 指定時間</span></label>
+            <label><input type="radio" name="inputMode" value="remain" onchange="toggleInputMode()"><span>⏳ 剩餘時間</span></label>
+        </div>
 
-<div class="container">
+        <div id="mode-exact" class="input-section active">
+            <div class="form-group"><label>預計摧毀時間：</label><input type="time" id="destroyTime"></div>
+        </div>
 
-<h1>🍄 蘑菇討伐鬧鐘</h1>
-
-<button id="notifyBtn" class="notify-btn" onclick="requestNotificationPermission()">
-🔔 開啟桌面通知
-</button>
-
-<div class="form-group">
-
-<label>📍 地點：</label>
-
-<input type="text" id="location" placeholder="例如：公園">
-
-<div class="quick-tags" id="quickTagsContainer"></div>
-
-</div>
-
-<div class="mode-tabs">
-
-<label>
-<input type="radio" name="inputMode" value="exact" checked onchange="toggleInputMode()">
-<span>🕒 指定時間</span>
-</label>
-
-<label>
-<input type="radio" name="inputMode" value="remain" onchange="toggleInputMode()">
-<span>⏳ 剩餘時間</span>
-</label>
-
-</div>
-
-<div id="mode-exact" class="input-section active">
-
-<div class="form-group">
-<label>預計摧毀時間：</label>
-<input type="time" id="destroyTime">
-</div>
-
-</div>
-
-<div id="mode-remain" class="input-section">
-
-<div class="form-group">
-
-<label>倒數時間：</label>
-
-<div class="countdown-group">
-<input type="number" id="remainH" placeholder="時">
-<input type="number" id="remainM" placeholder="分">
-<input type="number" id="remainS" placeholder="秒">
-</div>
+        <div id="mode-remain" class="input-section">
+            <div class="form-group"><label>倒數時間：</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="number" id="remainH" placeholder="時"><input type="number" id="remainM" placeholder="分"><input type="number" id="remainS" placeholder="秒">
+                </div>
+            </div>
+        </div>
+        
+        <button onclick="addAlarms()">🚀 設定鬧鐘</button>
+        <button class="test-btn" onclick="testVoiceAndNotification()">🔊 測試通知</button>
+        <button id="notifyBtn" class="notify-btn" onclick="requestNotificationPermission()">
+            🔔 開啟桌面通知
+        </button>
+    </div>
 
 </div>
 
+<div id="customModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
+    <div class="container" style="max-width:300px;"><h3>⏰ 蘑菇提醒</h3><p id="modalMessage"></p><button onclick="closeModal()">我知道了</button></div>
 </div>
-    
-<div class="setting-group">
-    <label class="switch">
-        <input type="checkbox" id="notiToggle" checked>
-        啟用 LINE 通知
-    </label>
-</div>
- 
-<button onclick="addAlarms()">🚀 設定鬧鐘</button>
-
-<button class="test-btn" onclick="testVoiceAndNotification()">
-🔊 測試通知
-</button>
-
-<div class="alarm-list">
-
-<h2>⏳ 雲端同步中的提醒</h2>
-
-<div id="alarmsContainer"></div>
-
-</div>
-
-</div>
-
-</div>
-
-<div id="customModal">
-
-<div class="modal-content">
-
-<h3>⏰ 蘑菇提醒</h3>
-
-<p id="modalMessage"></p>
-
-<button onclick="closeModal()">我知道了</button>
-
-</div>
-
-</div>
-
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -469,6 +167,7 @@ const db = getDatabase(app);
 const alarmsRef = ref(db, 'alarms');
 
 const logsRef = ref(db, 'logs');
+
 
 /* Apps Script */
 
@@ -928,46 +627,33 @@ function triggerAlarm(location,type,id,timestamp){
 /* Render */
 
 function renderAlarms(){
-
     const container = document.getElementById('alarmsContainer');
-
     container.innerHTML='';
 
-    if(activeAlarms.length === 0){
-
-        container.innerHTML = '<p>目前沒有鬧鐘</p>';
-
-        return;
-
-    }
-
     activeAlarms.forEach(alarm => {
-
         const div = document.createElement('div');
+        
+        // 根據 type 加入不同的 class
+        div.className = `alarm-item alarm-${alarm.type}`; 
 
-        div.className = 'alarm-item';
-
-       div.innerHTML = `
-    <div>
-        <strong>${alarm.location}</strong>
-        <div>${new Date(alarm.timestamp).toLocaleTimeString('zh-TW')}</div>
-        <div style="font-size:12px; color:#888;">
-            ${alarm.type === 'exact' ? '✅ 摧毀' : 
-              alarm.type === 'delayed' ? '⚠️ 倒數1分鐘' : 
-              alarm.type === 'ding1' ? '🔔 倒數30秒' : 
-              alarm.type === 'ding2' ? '🔔 倒數10秒' : ''}
-        </div>
-    </div>
-
-    <button class="delete-btn" onclick="removeAlarm('${alarm.id}')">
-        刪除
-    </button>
-`;
-
+        div.innerHTML = `
+            <div>
+                <strong>${alarm.location}</strong>
+                <span style="font-size: 12px; margin-left: 8px;">
+                    ${alarm.type === 'exact' ? '✅ 摧毀' : 
+                      alarm.type === 'delayed' ? '⚠️ 倒數1分鐘' : 
+                      alarm.type === 'ding1' ? '🔔 倒數30秒' : 
+                      alarm.type === 'ding2' ? '🔔 倒數10秒' : ''}
+                </span>
+                <div style="font-size: 15px; color: #888;">
+                    ${new Date(alarm.timestamp).toLocaleTimeString('zh-TW')}</div>
+          
+                </div>
+            </div>
+            <button class="delete-btn" onclick="removeAlarm('${alarm.id}')">刪除</button>
+        `;
         container.appendChild(div);
-
     });
-
 }
 
 /* Log */
