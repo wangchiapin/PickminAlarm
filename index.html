@@ -803,7 +803,9 @@ function startLiveClock() {
     setInterval(updateClock, 1000);
     updateClock(); // 頁面載入時立即顯示時間
 }
-    
+
+setInterval(() => document.getElementById('liveClock').textContent = new Date().toLocaleTimeString('zh-TW', {hour12: false}), 1000);
+
 </script>
 
 </body>
