@@ -254,7 +254,21 @@ onChildRemoved(alarmsRef, (snapshot) => {
 
 });
 
-onChildAdded(logsRef, (snapshot) => {
+
+    // 1. 在外面宣告一個 Set，用來記錄已經印在畫面上的紀錄 ID
+    const renderedLogIds = new Set();
+
+    // 2. 改寫你原本的這一段
+    onChildAdded(logsRef, (snapshot) => {
+    const logId = snapshot.key; // 👈 取得這筆紀錄在 Firebase 的唯一 ID
+
+    // 如果這個 ID 已經印過了，就直接跳出，不再重複印
+    if (renderedLogIds.has(logId)) {
+        return; 
+    }
+
+    // 沒印過的話，就把 ID 記錄起來
+    renderedLogIds.add(logId);
 
     const data = snapshot.val();
 
@@ -693,6 +707,7 @@ function clearLogsBtn(){
         remove(logsRef) // 這行會刪除 Firebase 上整個 logs 節點的資料
             .then(() => {
                 document.getElementById('logContainer').innerHTML='';
+                renderedLogIds.clear(); // 👈 補上這一行，把防重置的紀錄也清空
                 console.log("雲端紀錄已清除");
             })
             .catch(error => {
