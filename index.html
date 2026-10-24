@@ -177,8 +177,6 @@ const logsRef = ref(db, 'logs');
 
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec";
 
-const API_KEY = "MySecret12345";
-
 /* State */
 
 let activeAlarms = [];
@@ -338,8 +336,7 @@ function sendDesktopNotification(title,message){
     if(Notification.permission === "granted"){
 
         new Notification(title,{
-            body:message,
-            icon:"icon.png"
+            body:message
         });
 
     }
@@ -348,19 +345,15 @@ function sendDesktopNotification(title,message){
 
 /* LINE */
 
-async function triggerLineNotification(location, type, destroyTime = '') {
+// 不帶金鑰：只告訴 Apps Script「哪一個鬧鐘、什麼類型」，
+// 地點和時間由 Apps Script 自己去 Firebase 查，並檢查鬧鐘真的存在、時間真的到了才會發 LINE
+async function triggerLineNotification(alarmId, type) {
     try {
-        await fetch("https://script.google.com/macros/s/AKfycbwxsOSF6kbxC6gd8sFhjVMYw1PVSYhKTTR9QFIkcKNtStacuuw1DS5rseDKjQ5nGYpfrg/exec", {
+        await fetch(WEB_APP_URL, {
             method: 'POST',
             mode: 'no-cors', // 關鍵：加上這一行，繞過 CORS 預檢
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                apiKey: "MySecret12345", 
-                action: "sendNotification", 
-                location, 
-                type, 
-                destroyTime 
-            })
+            body: JSON.stringify({ alarmId, type })
         });
         console.log("LINE 通知請求已發出 (Fire and forget)");
     } catch (e) { 
@@ -509,7 +502,7 @@ function addAlarms(){
     const plus4m30 = targetTime + 270000;
     const plus4m50 = targetTime + 290000;
 
-    push(alarmsRef,{
+    const exactRef = push(alarmsRef,{
         location,
         timestamp:targetTime,
         type:"exact"
@@ -533,9 +526,7 @@ function addAlarms(){
         type:"ding2"
     });
 
-    const destroyTimeStr = new Date(targetTime).toLocaleTimeString('zh-TW');
-
-    triggerLineNotification(location,"confirmed",destroyTimeStr);
+    triggerLineNotification(exactRef.key,"confirmed");
 
     pushLogToCloud(`建立 ${location} 鬧鐘`,'create');
 
@@ -606,7 +597,7 @@ function triggerAlarm(location,type,id,timestamp){
         playAlertSound(message);
         showModal(message);
         sendDesktopNotification("🍄 已摧毀",message);
-        triggerLineNotification(location,"destroyed");
+        triggerLineNotification(id,"destroyed");
         pushLogToCloud(message,'trigger');
     }
 
@@ -615,7 +606,7 @@ function triggerAlarm(location,type,id,timestamp){
         playAlertSound(message);
         showModal(message);
         sendDesktopNotification("⚠️ 1分鐘",message);
-        triggerLineNotification(location,"warning");
+        triggerLineNotification(id,"warning");
         pushLogToCloud(message,'trigger');
     }
 
@@ -651,22 +642,40 @@ function renderAlarms(){
         // 根據 type 加入不同的 class
         div.className = `alarm-item alarm-${alarm.type}`; 
 
-        div.innerHTML = `
-            <div>
-                <strong>${alarm.location}</strong>
-                <span style="font-size: 12px; margin-left: 8px;">
-                    ${alarm.type === 'exact' ? '✅ 摧毀' : 
-                      alarm.type === 'delayed' ? '⚠️ 倒數1分鐘' : 
-                      alarm.type === 'ding1' ? '🔔 倒數30秒' : 
-                      alarm.type === 'ding2' ? '🔔 倒數10秒' : ''}
-                </span>
-                <div style="font-size: 15px; color: #888;">
-                    ${new Date(alarm.timestamp).toLocaleTimeString('zh-TW')}</div>
-          
-                </div>
-            </div>
-            <button class="delete-btn" onclick="removeAlarm('${alarm.id}')">刪除</button>
-        `;
+        const typeLabels = {
+            exact: '✅ 摧毀',
+            delayed: '⚠️ 倒數1分鐘',
+            ding1: '🔔 倒數30秒',
+            ding2: '🔔 倒數10秒'
+        };
+
+        // 全部用純文字塞進畫面，資料庫裡的內容不會被當成程式執行
+        const info = document.createElement('div');
+
+        const nameEl = document.createElement('strong');
+        nameEl.textContent = alarm.location;
+
+        const typeEl = document.createElement('span');
+        typeEl.style.fontSize = '12px';
+        typeEl.style.marginLeft = '8px';
+        typeEl.textContent = typeLabels[alarm.type] || '';
+
+        const timeEl = document.createElement('div');
+        timeEl.style.fontSize = '15px';
+        timeEl.style.color = '#888';
+        timeEl.textContent = new Date(alarm.timestamp).toLocaleTimeString('zh-TW');
+
+        info.appendChild(nameEl);
+        info.appendChild(typeEl);
+        info.appendChild(timeEl);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'delete-btn';
+        delBtn.textContent = '刪除';
+        delBtn.addEventListener('click', () => removeAlarm(alarm.id));
+
+        div.appendChild(info);
+        div.appendChild(delBtn);
         container.appendChild(div);
     });
 }
@@ -793,17 +802,6 @@ function setNowTime(){
 
 }
 
-/* SW */
-
-if('serviceWorker' in navigator){
-
-    window.addEventListener('load', () => {
-
-
-    });
-
-}
-
 /* Init */
 
 initQuickTags();
@@ -839,7 +837,7 @@ function startLiveClock() {
     updateClock(); // 頁面載入時立即顯示時間
 }
 
-setInterval(() => document.getElementById('liveClock').textContent = new Date().toLocaleTimeString('zh-TW', {hour12: false}), 1000);
+startLiveClock();
 
 </script>
 

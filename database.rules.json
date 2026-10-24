@@ -1,0 +1,33 @@
+{
+  "rules": {
+    "alarms": {
+      ".read": true,
+      "$id": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['location', 'timestamp', 'type'])",
+        "location": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30" },
+        "timestamp": { ".validate": "newData.isNumber() && newData.val() > now - 600000 && newData.val() < now + 90000000" },
+        "type": { ".validate": "newData.isString() && newData.val().matches(/^(exact|delayed|ding1|ding2)$/)" },
+        "$other": { ".validate": false }
+      }
+    },
+    "logs": {
+      ".read": true,
+      ".write": true,
+      "$id": {
+        ".validate": "newData.hasChildren(['message', 'type', 'timeStr'])",
+        "message": { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "type": { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "timeStr": { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "$other": { ".validate": false }
+      }
+    },
+    "settings": {
+      ".read": true,
+      "notificationEnabled": {
+        ".write": true,
+        ".validate": "newData.isBoolean()"
+      }
+    }
+  }
+}
