@@ -16,4 +16,4 @@
 - 鬧鐘的地點改成純文字顯示。
 
 ## Firebase 規則
-正本是本 repo 的 `database.rules.json`（Realtime Database）：`alarms`（地點最多 30 字、類型只能是 exact／delayed／ding1／ding2、時間限制在合理範圍）、`logs`、`settings/notificationEnabled`。改規則後要到 Firebase 主控台貼上發佈。
+正本是本 repo 的 `pickminalarm-database.rules.json`（Realtime Database）：`alarms`（地點最多 30 字、類型只能是 exact／delayed／ding1／ding2、時間限制在合理範圍）、`logs`、`settings/notificationEnabled`。改規則後要到 Firebase 主控台貼上發佈。
