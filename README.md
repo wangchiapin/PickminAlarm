@@ -6,7 +6,7 @@
 - **Firebase 專案：** pickminalarm
 - **登入方式：** —
 - **狀態：** 閒置（舊作）
-- **備註：** 2026-10-24 做過一次安全整理（程式不再放金鑰）。
+- **備註：** 2026-10-24 做過一次安全整理（程式不再放金鑰）。2026-10-28 起 Gratitude（感謝日記）共用此專案的 **Firestore**（鬧鐘用的是 Realtime Database，兩者互不影響）；要刪除這個專案、或改 Firestore 規則之前，請先確認 Gratitude。
 
 ## LINE 通知（2026-10-24 改版）
 - 網頁只送出「哪一個鬧鐘、什麼類型」（`confirmed`／`warning`／`destroyed`）給 Google Apps Script（`apps-script/pickminalarm-line.gs`），**前端不再放任何金鑰**。
